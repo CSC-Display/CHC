@@ -188,551 +188,225 @@
             statusEl.classList.remove('hidden');
         }
 
-        // Extract sports data directly (since it's already loaded)
-        function extractSportsData() {
-            return new Promise((resolve, reject) => {
-                const gmsWrapper = document.querySelector('.gms-wrapper');
-                
-                console.log('Extracting data directly from loaded content...');
-                console.log('GMS Wrapper content:', gmsWrapper.innerHTML);
-                console.log('GMS Wrapper text:', gmsWrapper.textContent);
-                
-                // Check if we have actual data (not just loading message)
-                const hasLoadingMessage = gmsWrapper.textContent.includes('Loading sports data...');
-                const hasContent = gmsWrapper.textContent.trim().length > 30;
-                
-                // Count elements
-                const tables = gmsWrapper.querySelectorAll('table');
-                const rows = gmsWrapper.querySelectorAll('tr');
-                const divs = gmsWrapper.querySelectorAll('div');
-                const spans = gmsWrapper.querySelectorAll('span');
-                const links = gmsWrapper.querySelectorAll('a');
-                const allElements = gmsWrapper.querySelectorAll('*');
-                
-                console.log('Content analysis:', {
-                    hasLoadingMessage,
-                    hasContent,
-                    textLength: gmsWrapper.textContent.trim().length,
-                    totalElements: allElements.length,
-                    tables: tables.length,
-                    rows: rows.length,
-                    divs: divs.length,
-                    spans: spans.length,
-                    links: links.length
-                });
-                
-                // If we only have the loading message, the API hasn't loaded yet
-                if (hasLoadingMessage && !hasContent) {
-                    console.log('Still showing loading message, waiting for API...');
-                    waitForAPIToLoad().then(resolve).catch(reject);
-                    return;
-                }
-                
-                // Try to extract data from what we have
-                try {
-                    const extractedData = parseGMSData(gmsWrapper);
-                    console.log('Directly extracted data:', extractedData);
-                    
-                    if (extractedData.length > 0) {
-                        resolve(extractedData);
-                    } else {
-                        console.log('No data extracted, waiting for API...');
-                        waitForAPIToLoad().then(resolve).catch(reject);
-                    }
-                } catch (error) {
-                    console.log('Error extracting data:', error);
-                    reject(error);
-                }
-            });
-        }
-
-        // Wait for API to load (fallback function)
-        function waitForAPIToLoad() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 30; // Wait up to 15 seconds
-                
-                function checkForChanges() {
-                    attempts++;
-                    const gmsWrapper = document.querySelector('.gms-wrapper');
-                    
-                    console.log(`Waiting attempt ${attempts}...`);
-                    
-                    // Check if content has changed from loading message
-                    const currentText = gmsWrapper.textContent.trim();
-                    const stillLoading = currentText.includes('Loading sports data...');
-                    const hasNewContent = currentText.length > 50 && !stillLoading;
-                    
-                    if (hasNewContent) {
-                        console.log('Content has loaded!');
-                        try {
-                            const data = parseGMSData(gmsWrapper);
-                            if (data.length > 0) {
-                                resolve(data);
-                                return;
-                            }
-                        } catch (error) {
-                            console.log('Error parsing new content:', error);
-                        }
-                    }
-                    
-                    if (attempts >= maxAttempts) {
-                        // Try one final extraction
-                        try {
-                            const finalData = parseGMSData(gmsWrapper);
-                            if (finalData.length > 0) {
-                                resolve(finalData);
-                                return;
-                            }
-                        } catch (error) {
-                            console.log('Final extraction failed:', error);
-                        }
-                        
-                        reject(new Error(`API did not load data. Current content: ${currentText.substring(0, 200)}`));
-                        return;
-                    }
-                    
-                    setTimeout(checkForChanges, 500);
-                }
-                
-                checkForChanges();
-            });
-        }
-
-        // Parse the loaded GMS data
+        // Simple parsing function with better error handling
         function parseGMSData(container) {
             const data = [];
-            console.log('Parsing GMS data from container:', container);
+            console.log('=== STARTING PARSE ===');
             
-            // Get all the HTML content for analysis
-            const allHTML = container.innerHTML;
-            const allText = container.textContent.trim();
-            
-            console.log('Container HTML length:', allHTML.length);
-            console.log('Container text:', allText);
-            
-            // Try different approaches to extract data
-            
-            // Approach 1: Look for table data (Enhanced for sports fixtures)
-            const tables = container.querySelectorAll('table');
-            console.log('Found tables:', tables.length);
-            
-            if (tables.length > 0) {
-                tables.forEach((table, tableIndex) => {
-                    console.log(`Processing table ${tableIndex}`);
-                    const rows = table.querySelectorAll('tr');
-                    let headers = [];
-                    
-                    // Get headers - try different approaches
-                    if (rows.length > 0) {
-                        const headerRow = rows[0];
-                        const headerCells = headerRow.querySelectorAll('th, td');
-                        
-                        // Extract headers
-                        headerCells.forEach(cell => {
-                            const headerText = cell.textContent.trim();
-                            if (headerText) {
-                                headers.push(headerText);
-                            }
-                        });
-                        
-                        console.log('Table headers found:', headers);
-                        
-                        // If no proper headers found, create default ones based on sports data
-                        if (headers.length === 0 || headers.every(h => h.length < 2)) {
-                            headers = ['Date', 'Home Team', 'Score', 'Away Team', 'Location'];
-                            console.log('Using default headers:', headers);
-                        }
-                    }
-                    
-                    // Get data rows (start from row 0 if no headers, row 1 if headers exist)
-                    const startRow = headers.length > 0 && rows[0]?.querySelector('th') ? 1 : 0;
-                    
-                    for (let i = startRow; i < rows.length; i++) {
-                        const row = rows[i];
-                        const rowData = {};
-                        const cells = row.querySelectorAll('td, th');
-                        
-                        console.log(`Row ${i} has ${cells.length} cells`);
-                        
-                        cells.forEach((cell, index) => {
-                            const cellText = cell.textContent.trim();
-                            const header = headers[index] || `Column_${index + 1}`;
-                            
-                            // Special handling for sports data
-                            if (cellText) {
-                                // Check if this cell contains a score pattern (e.g., "2:1", "02:00", "3-1")
-                                if (/^\d+[\s]*[:\-]\s*\d+$/.test(cellText)) {
-                                    rowData[header] = cellText;
-                                }
-                                // Check if this looks like a date
-                                else if (/\d{1,2}[-\/\s]\w{3}[-\/\s]\d{2,4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(cellText)) {
-                                    rowData[header] = cellText;
-                                }
-                                // Regular content
-                                else {
-                                    rowData[header] = cellText;
-                                }
-                            }
-                        });
-                        
-                        // Only add row if it has meaningful data
-                        const meaningfulData = Object.values(rowData).some(val => val && val.length > 0);
-                        if (meaningfulData) {
-                            console.log('Adding row data:', rowData);
-                            data.push(rowData);
-                        }
-                    }
-                });
+            try {
+                const allText = container.textContent.trim();
+                console.log('Raw text content:', allText);
                 
-                // If we found table data, return it
-                if (data.length > 0) {
-                    console.log('Successfully parsed table data:', data);
+                if (!allText || allText.length < 10) {
+                    console.log('No meaningful content found');
                     return data;
                 }
-            }
-            
-            // Approach 2: Parse raw text data for sports fixtures (FIXED)
-            if (data.length === 0 && allText && allText.length > 50) {
-                console.log('Parsing raw text data for sports fixtures');
                 
-                // Split text into lines and clean them
-                const lines = allText.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0);
+                // Split text into lines for processing
+                const lines = allText.split('\n').map(line => line.trim()).filter(line => line.length > 5);
+                console.log('Text lines found:', lines.length);
                 
-                console.log('Text lines found:', lines);
-                
-                // Look for fixture patterns - each fixture should be a group of related lines
-                const fixtures = [];
-                let i = 0;
-                
-                while (i < lines.length) {
+                // Process each line looking for fixture data
+                for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
+                    console.log(`Processing line ${i}: ${line.substring(0, 100)}`);
                     
-                    // Skip headers
+                    // Skip header lines
                     if (line.toLowerCase().includes('date') || 
                         line.toLowerCase().includes('home') || 
                         line.toLowerCase().includes('away') ||
                         line.toLowerCase().includes('score') ||
                         line.toLowerCase().includes('location') ||
-                        line.includes('[Club match') ||
-                        line.length < 5) {
-                        i++;
+                        line.includes('[Club match')) {
+                        console.log('Skipping header line');
                         continue;
                     }
                     
-                    // Check if this line looks like a date (start of new fixture)
-                    const dateMatch = line.match(/(\d{1,2}\s+\w{3}\s+\d{4})/);
+                    // Look for date pattern at start of line
+                    const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/;
+                    const dateMatch = line.match(datePattern);
+                    
                     if (dateMatch) {
-                        const fixture = {
-                            Date: dateMatch[1],
-                            OriginalText: line
-                        };
+                        console.log('Found date:', dateMatch[1]);
+                        const fixture = { Date: dateMatch[1] };
                         
-                        // Extract the rest of the fixture data from this line
-                        // Pattern: "20 Sep 2025Chelmsford 5 (F)2 : 1Southend & Benfleet 3Chelmsford HC - Chelmer Park - Pitch 1"
-                        let remainingText = line.replace(dateMatch[1], '').trim();
+                        // Get text after the date
+                        const afterDate = line.replace(dateMatch[1], '').trim();
+                        console.log('After date:', afterDate);
                         
-                        // Try to extract score pattern first (easier to identify)
-                        const scoreMatch = remainingText.match(/(\d+\s*:\s*\d+)/);
+                        // Look for score pattern
+                        const scorePattern = /(\d+\s*:\s*\d+)/;
+                        const scoreMatch = afterDate.match(scorePattern);
+                        
                         if (scoreMatch) {
+                            console.log('Found score:', scoreMatch[1]);
                             fixture.Score = scoreMatch[1];
                             
-                            // Split by score to get home team (before) and away team + location (after)
-                            const parts = remainingText.split(scoreMatch[1]);
-                            if (parts.length >= 2) {
-                                fixture.HomeTeam = parts[0].trim();
-                                
-                                // For away team and location, we need to be smarter
-                                const afterScore = parts[1].trim();
-                                
-                                // Look for team name patterns:
-                                // - Chelmsford teams: end with number + optional (M)/(F) like "Chelmsford 5 (F)" or "Chelmsford 3"
-                                // - Other teams: may end with number like "Southend & Benfleet 3" or just name
-                                
-                                let awayTeam = '';
-                                let location = '';
-                                
-                                // Pattern 1: Look for Chelmsford teams (Chelmsford + number + optional (M/F))
-                                const chelmsfordMatch = afterScore.match(/^(.*?Chelmsford\s+\d+(?:\s*\([MF]\))?)(.*)/i);
-                                if (chelmsfordMatch) {
-                                    awayTeam = chelmsfordMatch[1].trim();
-                                    location = chelmsfordMatch[2].trim();
-                                }
-                                // Pattern 2: Look for other teams ending with numbers
-                                else {
-                                    // Try to find where the team name ends by looking for location keywords
-                                    const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
-                                    let bestSplit = -1;
-                                    
-                                    for (const keyword of locationKeywords) {
-                                        const keywordIndex = afterScore.indexOf(keyword);
-                                        if (keywordIndex > 0) {
-                                            // Find the start of the word containing this keyword
-                                            let wordStart = keywordIndex;
-                                            while (wordStart > 0 && afterScore[wordStart - 1] !== ' ') {
-                                                wordStart--;
-                                            }
-                                            
-                                            // Check if this makes sense as a team/location split
-                                            const potentialTeam = afterScore.substring(0, wordStart).trim();
-                                            if (potentialTeam.length > 2) {
-                                                bestSplit = wordStart;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    
-                                    if (bestSplit > 0) {
-                                        awayTeam = afterScore.substring(0, bestSplit).trim();
-                                        location = afterScore.substring(bestSplit).trim();
-                                    }
-                                    // Fallback: Look for team names that end with numbers
-                                    else {
-                                        const teamNumberMatch = afterScore.match(/^(.*?\w+\s+\d+)(.*)$/);
-                                        if (teamNumberMatch) {
-                                            awayTeam = teamNumberMatch[1].trim();
-                                            location = teamNumberMatch[2].trim();
-                                        }
-                                        // Last resort: split roughly in the middle or use the whole thing as team
-                                        else {
-                                            const words = afterScore.split(' ');
-                                            if (words.length > 3) {
-                                                // Assume first few words are team name
-                                                awayTeam = words.slice(0, Math.ceil(words.length / 2)).join(' ');
-                                                location = words.slice(Math.ceil(words.length / 2)).join(' ');
-                                            } else {
-                                                awayTeam = afterScore;
-                                                location = '';
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                fixture.AwayTeam = awayTeam;
-                                fixture.Location = location;
-                            }
+                            // Split by score
+                            const beforeScore = afterDate.substring(0, afterDate.indexOf(scoreMatch[1])).trim();
+                            const afterScore = afterDate.substring(afterDate.indexOf(scoreMatch[1]) + scoreMatch[1].length).trim();
+                            
+                            console.log('Before score (home team):', beforeScore);
+                            console.log('After score (away + location):', afterScore);
+                            
+                            fixture.HomeTeam = beforeScore;
+                            
+                            // Parse away team and location
+                            const result = parseAwayTeamAndLocation(afterScore);
+                            fixture.AwayTeam = result.awayTeam;
+                            fixture.Location = result.location;
                         } else {
-                            // No score found, treat as fixture (not result)
+                            // No score - might be a future fixture
                             fixture.Score = '';
-                            fixture.HomeTeam = remainingText;
+                            fixture.HomeTeam = afterDate;
                             fixture.AwayTeam = '';
                             fixture.Location = '';
                         }
                         
-                        fixtures.push(fixture);
+                        console.log('Final fixture:', fixture);
+                        data.push(fixture);
                     }
-                    
-                    i++;
                 }
                 
-                console.log('Parsed fixtures:', fixtures);
+                console.log('=== PARSE COMPLETE ===');
+                console.log('Total fixtures found:', data.length);
+                return data;
                 
-                if (fixtures.length > 0) {
-                    return fixtures;
+            } catch (error) {
+                console.error('Parse error:', error);
+                return [{
+                    Type: 'Parse Error',
+                    Error: error.message,
+                    Content: container.textContent.substring(0, 200)
+                }];
+            }
+        }
+
+        // Separate function to parse away team and location
+        function parseAwayTeamAndLocation(text) {
+            console.log('Parsing away team/location from:', text);
+            
+            try {
+                // Check for Chelmsford home games first
+                const chelmsfordHomePattern = /^(.+?)(ChelmsfordHC\s*-\s*Chelmer\s*Park\s*-\s*Pitch\s*\d)$/i;
+                const chelmsfordHomeMatch = text.match(chelmsfordHomePattern);
+                
+                if (chelmsfordHomeMatch) {
+                    console.log('Chelmsford home game detected');
+                    return {
+                        awayTeam: chelmsfordHomeMatch[1].trim(),
+                        location: chelmsfordHomeMatch[2].trim()
+                    };
                 }
                 
-                // Alternative approach: try to split the long concatenated string
-                if (fixtures.length === 0) {
-                    console.log('Trying alternative parsing for concatenated data');
-                    
-                    // Look for date patterns in the text to split fixtures
-                    const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/g;
-                    const dateMatches = [];
-                    let match;
-                    
-                    while ((match = datePattern.exec(allText)) !== null) {
-                        dateMatches.push({
-                            date: match[1],
-                            index: match.index
-                        });
-                    }
-                    
-                    console.log('Date matches found:', dateMatches);
-                    
-                    // Split text at each date
-                    for (let j = 0; j < dateMatches.length; j++) {
-                        const currentMatch = dateMatches[j];
-                        const nextMatch = dateMatches[j + 1];
-                        
-                        const startIndex = currentMatch.index;
-                        const endIndex = nextMatch ? nextMatch.index : allText.length;
-                        const fixtureText = allText.substring(startIndex, endIndex).trim();
-                        
-                        // Parse this individual fixture
-                        const fixture = {
-                            Date: currentMatch.date,
-                            FixtureText: fixtureText
-                        };
-                        
-                        // Extract score
-                        const scoreMatch = fixtureText.match(/(\d+\s*:\s*\d+)/);
-                        if (scoreMatch) {
-                            fixture.Score = scoreMatch[1];
-                            
-                            // Split around the score
-                            const beforeScore = fixtureText.substring(0, fixtureText.indexOf(scoreMatch[1]));
-                            const afterScore = fixtureText.substring(fixtureText.indexOf(scoreMatch[1]) + scoreMatch[1].length);
-                            
-                            // Home team is after the date
-                            fixture.HomeTeam = beforeScore.replace(currentMatch.date, '').trim();
-                            
-                            // Special case: Check if this is a Chelmsford home game (location will be ChelmsfordHC)
-                            const chelmsfordHomeMatch = afterScoreTrimmed.match(/^(.+?)(ChelmsfordHC\s*-\s*Chelmer\s*Park\s*-\s*Pitch\s*\d)$/i);
-                            if (chelmsfordHomeMatch) {
-                                awayTeam = chelmsfordHomeMatch[1].trim();
-                                location = chelmsfordHomeMatch[2].trim();
-                            }
-                            // Pattern 1: Check for Chelmsford away teams (Chelmsford + single digit + optional (M/F))
-                            else {
-                                const chelmsfordMatch = afterScoreTrimmed.match(/^(.*?Chelmsford\s+\d(?:\s*\([MF]\))?)(.*)/i);
-                                if (chelmsfordMatch) {
-                                    awayTeam = chelmsfordMatch[1].trim();
-                                    location = chelmsfordMatch[2].trim();
-                                }
-                                // Pattern 2: Look for other teams that end with single digits
-                                else {
-                                    // Try to identify where team name ends by looking for location keywords
-                                    const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
-                                    let bestSplit = -1;
-                                    
-                                    for (const keyword of locationKeywords) {
-                                        const keywordIndex = afterScoreTrimmed.indexOf(keyword);
-                                        if (keywordIndex > 0) {
-                                            // Find the start of the word containing this keyword
-                                            let wordStart = keywordIndex;
-                                            while (wordStart > 0 && afterScoreTrimmed[wordStart - 1] !== ' ') {
-                                                wordStart--;
-                                            }
-                                            
-                                            // Check if this makes sense as a team/location split
-                                            const potentialTeam = afterScoreTrimmed.substring(0, wordStart).trim();
-                                            if (potentialTeam.length > 2) {
-                                                bestSplit = wordStart;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    
-                                    if (bestSplit > 0) {
-                                        awayTeam = afterScoreTrimmed.substring(0, bestSplit).trim();
-                                        location = afterScoreTrimmed.substring(bestSplit).trim();
-                                    }
-                                    // Pattern 3: Look for team names ending with single digits (like "Waltham Forest 1", "Southend & Benfleet 3")
-                                    else {
-                                        const teamNumberMatch = afterScoreTrimmed.match(/^(.*?\b\w+\s+\d)(.*)$/);
-                                        if (teamNumberMatch) {
-                                            awayTeam = teamNumberMatch[1].trim();
-                                            location = teamNumberMatch[2].trim();
-                                        }
-                                        // Pattern 4: Look for team names ending with "Development", "Evergreens", etc.
-                                        else {
-                                            const teamSuffixMatch = afterScoreTrimmed.match(/^(.*?\b(?:Development|Evergreens|Centurions)\b)(.*)$/i);
-                                            if (teamSuffixMatch) {
-                                                awayTeam = teamSuffixMatch[1].trim();
-                                                location = teamSuffixMatch[2].trim();
-                                            }
-                                            // Last resort: assume first reasonable chunk is team name
-                                            else {
-                                                const words = afterScoreTrimmed.split(' ');
-                                                if (words.length > 4) {
-                                                    // Take first 3-4 words as team name
-                                                    awayTeam = words.slice(0, 3).join(' ');
-                                                    location = words.slice(3).join(' ');
-                                                } else {
-                                                    awayTeam = afterScoreTrimmed;
-                                                    location = '';
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            fixture.AwayTeam = awayTeam;
-                            fixture.Location = location;
-                        }
-                        
-                        fixtures.push(fixture);
-                    }
-                    
-                    console.log('Alternative parsed fixtures:', fixtures);
-                    return fixtures;
+                // Check for Chelmsford away teams
+                const chelmsfordAwayPattern = /^(.*?Chelmsford\s+\d(?:\s*\([MF]\))?)(.*)/i;
+                const chelmsfordAwayMatch = text.match(chelmsfordAwayPattern);
+                
+                if (chelmsfordAwayMatch) {
+                    console.log('Chelmsford away team detected');
+                    return {
+                        awayTeam: chelmsfordAwayMatch[1].trim(),
+                        location: chelmsfordAwayMatch[2].trim()
+                    };
                 }
-            }
-            
-            // Approach 3: Look for structured content with specific selectors
-            if (data.length === 0) {
-                const listItems = container.querySelectorAll('li, .fixture, .result, .match, .game, .event');
-                console.log('Found structured items:', listItems.length);
                 
-                listItems.forEach((item, index) => {
-                    const text = item.textContent.trim();
-                    if (text && text.length > 10) {
-                        // Try to parse individual fixture from this item
-                        const fixtureData = { ItemIndex: index + 1 };
-                        
-                        // Look for date patterns
-                        const dateMatch = text.match(/\d{1,2}[-\/\s]\w{3}[-\/\s]\d{2,4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/);
-                        if (dateMatch) {
-                            fixtureData.Date = dateMatch[0];
+                // Look for location keywords to split
+                const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
+                
+                for (const keyword of locationKeywords) {
+                    const keywordIndex = text.indexOf(keyword);
+                    if (keywordIndex > 0) {
+                        // Find start of word containing this keyword
+                        let wordStart = keywordIndex;
+                        while (wordStart > 0 && text[wordStart - 1] !== ' ') {
+                            wordStart--;
                         }
                         
-                        // Look for score patterns
-                        const scoreMatch = text.match(/\d+[\s]*[:\-]\s*\d+/);
-                        if (scoreMatch) {
-                            fixtureData.Score = scoreMatch[0];
-                        }
-                        
-                        // Store full content
-                        fixtureData.Content = text;
-                        fixtureData.TagName = item.tagName;
-                        fixtureData.ClassName = item.className;
-                        
-                        data.push(fixtureData);
-                    }
-                });
-            }
-            
-            // Approach 4: Look for any divs with meaningful content
-            if (data.length === 0) {
-                const meaningfulDivs = container.querySelectorAll('div');
-                console.log('Found divs:', meaningfulDivs.length);
-                
-                meaningfulDivs.forEach((div, index) => {
-                    const text = div.textContent.trim();
-                    // Skip empty divs and the loading div
-                    if (text && text.length > 10 && !text.includes('Loading sports data')) {
-                        const hasNumbers = /\d/.test(text);
-                        const hasLetters = /[a-zA-Z]/.test(text);
-                        
-                        if (hasNumbers && hasLetters) {
-                            data.push({
-                                DivIndex: index + 1,
-                                Content: text,
-                                ClassName: div.className || 'no-class'
-                            });
+                        const potentialTeam = text.substring(0, wordStart).trim();
+                        if (potentialTeam.length > 2) {
+                            console.log('Split by location keyword:', keyword);
+                            return {
+                                awayTeam: potentialTeam,
+                                location: text.substring(wordStart).trim()
+                            };
                         }
                     }
-                });
-            }
-            
-            // Approach 5: Final fallback - create structured data from any content
-            if (data.length === 0 && allText && allText.length > 50) {
-                console.log('Final fallback: creating structured data from all content');
+                }
                 
-                // Just capture everything as a single record for manual review
-                data.push({
-                    Type: 'Raw Content',
-                    AllText: allText,
-                    TextLength: allText.length,
-                    Note: 'Manual parsing may be required'
-                });
+                // Look for teams ending with single digits
+                const teamNumberPattern = /^(.*?\b\w+\s+\d)(.*)$/;
+                const teamNumberMatch = text.match(teamNumberPattern);
+                
+                if (teamNumberMatch) {
+                    console.log('Team with number detected');
+                    return {
+                        awayTeam: teamNumberMatch[1].trim(),
+                        location: teamNumberMatch[2].trim()
+                    };
+                }
+                
+                // Look for special team suffixes
+                const teamSuffixPattern = /^(.*?\b(?:Development|Evergreens|Centurions)\b)(.*)$/i;
+                const teamSuffixMatch = text.match(teamSuffixPattern);
+                
+                if (teamSuffixMatch) {
+                    console.log('Team with suffix detected');
+                    return {
+                        awayTeam: teamSuffixMatch[1].trim(),
+                        location: teamSuffixMatch[2].trim()
+                    };
+                }
+                
+                // Fallback: split roughly in middle
+                const words = text.split(' ');
+                if (words.length > 4) {
+                    const midPoint = Math.ceil(words.length / 2);
+                    console.log('Using fallback split');
+                    return {
+                        awayTeam: words.slice(0, midPoint).join(' '),
+                        location: words.slice(midPoint).join(' ')
+                    };
+                }
+                
+                // Last resort: everything is away team
+                console.log('Using last resort - all as away team');
+                return {
+                    awayTeam: text,
+                    location: ''
+                };
+                
+            } catch (error) {
+                console.error('Error parsing away team/location:', error);
+                return {
+                    awayTeam: text,
+                    location: ''
+                };
             }
-            
-            console.log('Final parsed data:', data);
-            return data;
+        }
+
+        // Extract sports data directly
+        function extractSportsData() {
+            return new Promise((resolve, reject) => {
+                const gmsWrapper = document.querySelector('.gms-wrapper');
+                
+                console.log('Extracting data directly from loaded content...');
+                console.log('GMS Wrapper content length:', gmsWrapper.textContent.length);
+                
+                try {
+                    const extractedData = parseGMSData(gmsWrapper);
+                    console.log('Extracted data:', extractedData);
+                    
+                    if (extractedData.length > 0) {
+                        resolve(extractedData);
+                    } else {
+                        reject(new Error('No data could be extracted from the content'));
+                    }
+                } catch (error) {
+                    console.error('Extraction error:', error);
+                    reject(error);
+                }
+            });
         }
 
         // Display data in preview table (with specific column order)
@@ -753,13 +427,11 @@
             // Define the desired column order
             const desiredOrder = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
             
-            // Get all available keys from the data, excluding unwanted ones
+            // Get all available keys from the data
             const allKeys = new Set();
             data.forEach(row => {
                 Object.keys(row).forEach(key => {
-                    if (!['FixtureText', 'OriginalText', 'FixtureNumber'].includes(key)) {
-                        allKeys.add(key);
-                    }
+                    allKeys.add(key);
                 });
             });
             
@@ -805,13 +477,11 @@
             // Define the desired column order
             const desiredOrder = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
             
-            // Get all available keys from the data, excluding unwanted ones
+            // Get all available keys from the data
             const allKeys = new Set();
             data.forEach(row => {
                 Object.keys(row).forEach(key => {
-                    if (!['FixtureText', 'OriginalText', 'FixtureNumber'].includes(key)) {
-                        allKeys.add(key);
-                    }
+                    allKeys.add(key);
                 });
             });
             
@@ -863,12 +533,6 @@
             showStatus('Extracting sports data...', 'info');
             document.getElementById('exportCSV').disabled = true;
             
-            // First, let's see what's in the GMS wrapper right now
-            const gmsWrapper = document.querySelector('.gms-wrapper');
-            console.log('=== LOAD DATA CLICKED ===');
-            console.log('Current GMS wrapper content:', gmsWrapper.innerHTML.substring(0, 500));
-            console.log('Current text content:', gmsWrapper.textContent.substring(0, 200));
-            
             try {
                 sportsData = await extractSportsData();
                 displayData(sportsData);
@@ -877,26 +541,6 @@
             } catch (error) {
                 showStatus(`Error loading data: ${error.message}`, 'error');
                 console.error('Error:', error);
-                
-                // Let's try to extract whatever we can find anyway
-                try {
-                    console.log('Attempting fallback extraction...');
-                    const fallbackData = parseGMSData(gmsWrapper);
-                    console.log('Fallback data result:', fallbackData);
-                    
-                    if (fallbackData.length > 0) {
-                        showStatus('Extracted data using fallback method - check preview', 'success');
-                        sportsData = fallbackData;
-                        displayData(fallbackData);
-                        document.getElementById('exportCSV').disabled = false;
-                        dataLoaded = true;
-                    } else {
-                        showStatus('No data could be extracted. Try the Debug button to inspect content.', 'error');
-                    }
-                } catch (fallbackError) {
-                    console.error('Fallback extraction also failed:', fallbackError);
-                    showStatus('All extraction methods failed. Use Debug button to inspect.', 'error');
-                }
             }
         });
 
@@ -933,18 +577,9 @@
         debugButton.onclick = () => {
             const gmsWrapper = document.querySelector('.gms-wrapper');
             console.log('=== DEBUG EXTRACTION ===');
-            console.log('HTML Content:', gmsWrapper.innerHTML);
-            console.log('Text Content:', gmsWrapper.textContent);
-            console.log('Child elements:', gmsWrapper.children.length);
-            console.log('All elements:', gmsWrapper.querySelectorAll('*').length);
-            
-            // List all child elements
-            const children = Array.from(gmsWrapper.children);
-            console.log('Child elements:', children.map(child => ({
-                tagName: child.tagName,
-                className: child.className,
-                textContent: child.textContent.substring(0, 100)
-            })));
+            console.log('HTML Content length:', gmsWrapper.innerHTML.length);
+            console.log('Text Content length:', gmsWrapper.textContent.length);
+            console.log('Text preview:', gmsWrapper.textContent.substring(0, 500));
             
             // Try parsing whatever is there
             try {

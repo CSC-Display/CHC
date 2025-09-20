@@ -470,7 +470,77 @@
             showStatus(`Successfully loaded ${data.length} records`, 'success');
         }
 
-        // Convert data to CSV (with specific column order)
+        // Add table parsing function
+        function parseTableData(container) {
+            const data = [];
+            console.log('=== TABLE PARSING ===');
+            
+            const tables = container.querySelectorAll('table');
+            console.log('Tables found:', tables.length);
+            
+            tables.forEach((table, tableIndex) => {
+                console.log(`Processing table ${tableIndex}`);
+                const rows = table.querySelectorAll('tr');
+                console.log(`Table ${tableIndex} has ${rows.length} rows`);
+                
+                // Try to identify header row
+                let headers = [];
+                let dataStartRow = 0;
+                
+                if (rows.length > 0) {
+                    const firstRow = rows[0];
+                    const firstRowCells = firstRow.querySelectorAll('th, td');
+                    
+                    // Check if first row looks like headers
+                    const firstRowText = Array.from(firstRowCells).map(cell => cell.textContent.trim().toLowerCase());
+                    const hasHeaderWords = firstRowText.some(text => 
+                        text.includes('date') || text.includes('home') || text.includes('away') || 
+                        text.includes('score') || text.includes('location')
+                    );
+                    
+                    if (hasHeaderWords) {
+                        headers = Array.from(firstRowCells).map(cell => cell.textContent.trim());
+                        dataStartRow = 1;
+                        console.log('Headers found:', headers);
+                    } else {
+                        // Use default headers
+                        headers = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
+                        dataStartRow = 0;
+                        console.log('Using default headers:', headers);
+                    }
+                }
+                
+                // Process data rows
+                for (let i = dataStartRow; i < rows.length; i++) {
+                    const row = rows[i];
+                    const cells = row.querySelectorAll('td, th');
+                    console.log(`Row ${i} has ${cells.length} cells`);
+                    
+                    if (cells.length > 0) {
+                        const rowData = {};
+                        
+                        Array.from(cells).forEach((cell, cellIndex) => {
+                            const cellText = cell.textContent.trim();
+                            const header = headers[cellIndex] || `Column_${cellIndex + 1}`;
+                            
+                            if (cellText) {
+                                rowData[header] = cellText;
+                            }
+                        });
+                        
+                        // Only add if we have meaningful data
+                        const hasData = Object.values(rowData).some(val => val && val.length > 0);
+                        if (hasData) {
+                            console.log(`Adding table row data:`, rowData);
+                            data.push(rowData);
+                        }
+                    }
+                }
+            });
+            
+            console.log('Table parsing complete. Found:', data.length, 'records');
+            return data;
+        }
         function convertToCSV(data) {
             if (data.length === 0) return '';
             
@@ -570,32 +640,117 @@
             }, 1000);
         });
 
-        // Enhanced debug button
+        // Enhanced debug button with detailed content inspection
         const debugButton = document.createElement('button');
         debugButton.textContent = 'Debug: Extract Current Content';
         debugButton.className = 'btn-secondary';
         debugButton.onclick = () => {
             const gmsWrapper = document.querySelector('.gms-wrapper');
-            console.log('=== DEBUG EXTRACTION ===');
+            console.log('=== DETAILED DEBUG INSPECTION ===');
             console.log('HTML Content length:', gmsWrapper.innerHTML.length);
             console.log('Text Content length:', gmsWrapper.textContent.length);
-            console.log('Text preview:', gmsWrapper.textContent.substring(0, 500));
+            console.log('Full HTML content:', gmsWrapper.innerHTML);
+            console.log('Full text content:', gmsWrapper.textContent);
             
-            // Try parsing whatever is there
+            // Check for tables
+            const tables = gmsWrapper.querySelectorAll('table');
+            console.log('Tables found:', tables.length);
+            tables.forEach((table, index) => {
+                console.log(`Table ${index} content:`, table.outerHTML);
+                console.log(`Table ${index} text:`, table.textContent);
+            });
+            
+            // Check for divs
+            const divs = gmsWrapper.querySelectorAll('div');
+            console.log('Divs found:', divs.length);
+            divs.forEach((div, index) => {
+                if (div.textContent.trim().length > 10) {
+                    console.log(`Div ${index} content:`, div.textContent.trim());
+                }
+            });
+            
+            // Check for spans
+            const spans = gmsWrapper.querySelectorAll('span');
+            console.log('Spans found:', spans.length);
+            spans.forEach((span, index) => {
+                if (span.textContent.trim().length > 5) {
+                    console.log(`Span ${index} content:`, span.textContent.trim());
+                }
+            });
+            
+            // Check for any elements with text
+            const allElements = gmsWrapper.querySelectorAll('*');
+            console.log('All elements found:', allElements.length);
+            allElements.forEach((element, index) => {
+                const text = element.textContent.trim();
+                if (text.length > 20 && !text.includes('Loading sports data')) {
+                    console.log(`Element ${index} (${element.tagName}):`, text.substring(0, 100));
+                }
+            });
+            
+            // Try different parsing approaches
+            console.log('=== TRYING DIFFERENT PARSING APPROACHES ===');
+            
+            // Approach 1: Try table parsing
+            if (tables.length > 0) {
+                console.log('Trying table parsing...');
+                try {
+                    const tableData = parseTableData(gmsWrapper);
+                    console.log('Table parsing result:', tableData);
+                    if (tableData.length > 0) {
+                        sportsData = tableData;
+                        displayData(tableData);
+                        document.getElementById('exportCSV').disabled = false;
+                        showStatus(`Table parsing successful! Found ${tableData.length} items.`, 'success');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Table parsing failed:', error);
+                }
+            }
+            
+            // Approach 2: Try raw text parsing
+            console.log('Trying raw text parsing...');
             try {
                 const debugData = parseGMSData(gmsWrapper);
-                console.log('Debug parsed data:', debugData);
+                console.log('Raw text parsing result:', debugData);
                 if (debugData.length > 0) {
                     sportsData = debugData;
                     displayData(debugData);
                     document.getElementById('exportCSV').disabled = false;
-                    showStatus(`Debug extraction successful! Found ${debugData.length} items.`, 'success');
-                } else {
-                    showStatus('Debug extraction found no data - check console for details', 'error');
+                    showStatus(`Raw text parsing successful! Found ${debugData.length} items.`, 'success');
+                    return;
                 }
             } catch (error) {
-                console.error('Debug parsing failed:', error);
-                showStatus('Debug parsing failed - check console for error details', 'error');
+                console.error('Raw text parsing failed:', error);
+            }
+            
+            // Approach 3: Create manual data from whatever we find
+            console.log('Creating manual data structure...');
+            const manualData = [];
+            const allText = gmsWrapper.textContent.trim();
+            
+            if (allText.length > 50) {
+                // Split into chunks and create records
+                const chunks = allText.split(/(?=\d{1,2}\s+\w{3}\s+\d{4})/);
+                chunks.forEach((chunk, index) => {
+                    if (chunk.trim().length > 20) {
+                        manualData.push({
+                            ChunkNumber: index + 1,
+                            RawContent: chunk.trim().substring(0, 200),
+                            FullContent: chunk.trim()
+                        });
+                    }
+                });
+            }
+            
+            if (manualData.length > 0) {
+                sportsData = manualData;
+                displayData(manualData);
+                document.getElementById('exportCSV').disabled = false;
+                showStatus(`Manual parsing created ${manualData.length} records for inspection.`, 'info');
+            } else {
+                showStatus('No data could be extracted by any method - check console for full details', 'error');
             }
         };
         

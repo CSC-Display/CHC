@@ -63,7 +63,7 @@ jobs:
         git push
     
     - name: Upload CSV as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: fixture-data-csv
         path: "*.csv"
@@ -71,15 +71,16 @@ jobs:
     
     - name: Create release with data
       if: steps.verify-changed-files.outputs.changed == 'true'
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: data-update-${{ github.run_number }}
-        release_name: Fixture Data Update ${{ github.run_number }}
+        name: Fixture Data Update ${{ github.run_number }}
         body: |
           Automated fixture data update
           - Updated: $(date '+%Y-%m-%d %H:%M:%S')
           - Workflow run: ${{ github.run_number }}
         draft: false
         prerelease: false
+        files: "*.csv"

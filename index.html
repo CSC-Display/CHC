@@ -246,16 +246,34 @@
                         let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
                         console.log('After date:', afterDate);
                         
-                        // Look for score pattern - be more specific about score format
-                        const scorePattern = /(\d{1,2}\s*:\s*\d{1,2})/;
-                        const scoreMatch = afterDate.match(scorePattern);
+                        // Look for score pattern - be very specific about valid score format
+                        // Scores should be in format like "0:3", "2:1", "10:2" but NOT include team numbers
+                        const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
+                        let scoreMatch = null;
+                        let scoreIndex = -1;
                         
-                        if (scoreMatch) {
-                            console.log('Found score:', scoreMatch[1]);
+                        if (scoreMatches) {
+                            // Find the score that looks most like an actual match score
+                            for (const potentialScore of scoreMatches) {
+                                const potentialIndex = afterDate.indexOf(potentialScore);
+                                const beforePotentialScore = afterDate.substring(0, potentialIndex).trim();
+                                
+                                // Check if what comes before looks like a complete team name
+                                // Team names should end with a space + single digit, or ) for gender
+                                if (beforePotentialScore.match(/.*\s\d(\s*\([MF]\))?\s*$/) || 
+                                    beforePotentialScore.match(/.*[a-zA-Z]\s*$/)) {
+                                    scoreMatch = { 1: potentialScore };
+                                    scoreIndex = potentialIndex;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (scoreMatch && scoreIndex >= 0) {
+                            console.log('Found valid score:', scoreMatch[1]);
                             fixture.Score = scoreMatch[1];
                             
                             // Split by score using the exact position
-                            const scoreIndex = afterDate.indexOf(scoreMatch[1]);
                             const beforeScore = afterDate.substring(0, scoreIndex).trim();
                             const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
                             
@@ -334,11 +352,29 @@
                 // Use substring instead of replace to preserve the date
                 const afterDate = chunk.substring(chunk.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
                 
-                // More specific score pattern
-                const scoreMatch = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/);
-                if (scoreMatch) {
+                // Smart score detection - look for actual match scores vs team numbers
+                const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
+                let scoreMatch = null;
+                let scoreIndex = -1;
+                
+                if (scoreMatches) {
+                    // Find the score that looks most like an actual match score
+                    for (const potentialScore of scoreMatches) {
+                        const potentialIndex = afterDate.indexOf(potentialScore);
+                        const beforePotentialScore = afterDate.substring(0, potentialIndex).trim();
+                        
+                        // Check if what comes before looks like a complete team name
+                        if (beforePotentialScore.match(/.*\s\d(\s*\([MF]\))?\s*$/) || 
+                            beforePotentialScore.match(/.*[a-zA-Z]\s*$/)) {
+                            scoreMatch = { 1: potentialScore };
+                            scoreIndex = potentialIndex;
+                            break;
+                        }
+                    }
+                }
+                
+                if (scoreMatch && scoreIndex >= 0) {
                     fixture.Score = scoreMatch[1];
-                    const scoreIndex = afterDate.indexOf(scoreMatch[1]);
                     const beforeScore = afterDate.substring(0, scoreIndex).trim();
                     const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
                     

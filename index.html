@@ -192,7 +192,7 @@
         function extractSportsData() {
             return new Promise((resolve, reject) => {
                 let attempts = 0;
-                const maxAttempts = 20; // Wait up to 10 seconds
+                const maxAttempts = 40; // Wait up to 20 seconds
                 
                 function checkForData() {
                     attempts++;
@@ -200,14 +200,39 @@
                     // Look for the loaded data in various ways
                     const gmsWrapper = document.querySelector('.gms-wrapper');
                     
-                    // Check if data has been populated
+                    // Debug: Log what we're seeing
+                    console.log(`Attempt ${attempts}: Checking for data...`);
+                    console.log('GMS Wrapper content:', gmsWrapper.innerHTML);
+                    console.log('GMS Wrapper text:', gmsWrapper.textContent);
+                    
+                    // Check if the "Loading..." text has been replaced
+                    const isStillLoading = gmsWrapper.textContent.includes('Loading sports data...');
+                    const hasContent = gmsWrapper.textContent.trim().length > 30; // More than just loading text
+                    
+                    // Check for various elements that might contain data
                     const tables = gmsWrapper.querySelectorAll('table');
                     const rows = gmsWrapper.querySelectorAll('tr');
+                    const divs = gmsWrapper.querySelectorAll('div');
+                    const spans = gmsWrapper.querySelectorAll('span');
+                    const links = gmsWrapper.querySelectorAll('a');
                     const dataElements = gmsWrapper.querySelectorAll('[data-fixture], [data-result]');
                     
-                    if (tables.length > 0 || rows.length > 1 || dataElements.length > 0) {
+                    console.log('Found elements:', {
+                        tables: tables.length,
+                        rows: rows.length,
+                        divs: divs.length,
+                        spans: spans.length,
+                        links: links.length,
+                        dataElements: dataElements.length,
+                        hasContent,
+                        isStillLoading
+                    });
+                    
+                    // If we have content and it's not just the loading message
+                    if (!isStillLoading && hasContent) {
                         try {
                             const extractedData = parseGMSData(gmsWrapper);
+                            console.log('Extracted data:', extractedData);
                             if (extractedData.length > 0) {
                                 resolve(extractedData);
                                 return;
@@ -217,8 +242,34 @@
                         }
                     }
                     
+                    // Also try if we find any structured elements
+                    if (tables.length > 0 || rows.length > 1 || divs.length > 2 || spans.length > 0 || links.length > 0) {
+                        try {
+                            const extractedData = parseGMSData(gmsWrapper);
+                            console.log('Extracted data from elements:', extractedData);
+                            if (extractedData.length > 0) {
+                                resolve(extractedData);
+                                return;
+                            }
+                        } catch (error) {
+                            console.log('Error parsing element data:', error);
+                        }
+                    }
+                    
                     if (attempts >= maxAttempts) {
-                        reject(new Error('Timeout waiting for sports data to load'));
+                        // Before rejecting, try one final extraction of whatever content we have
+                        try {
+                            const finalData = parseGMSData(gmsWrapper);
+                            if (finalData.length > 0) {
+                                console.log('Final attempt successful:', finalData);
+                                resolve(finalData);
+                                return;
+                            }
+                        } catch (error) {
+                            console.log('Final attempt error:', error);
+                        }
+                        
+                        reject(new Error(`Timeout waiting for sports data to load. Last content: ${gmsWrapper.textContent.substring(0, 200)}`));
                         return;
                     }
                     
@@ -234,83 +285,162 @@
         // Parse the loaded GMS data
         function parseGMSData(container) {
             const data = [];
+            console.log('Parsing GMS data from container:', container);
+            
+            // Get all the HTML content for analysis
+            const allHTML = container.innerHTML;
+            const allText = container.textContent.trim();
+            
+            console.log('Container HTML length:', allHTML.length);
+            console.log('Container text:', allText);
             
             // Try different approaches to extract data
             
             // Approach 1: Look for table data
-            const table = container.querySelector('table');
-            if (table) {
-                const rows = table.querySelectorAll('tr');
-                const headers = [];
-                
-                // Get headers
-                const headerRow = rows[0];
-                if (headerRow) {
-                    headerRow.querySelectorAll('th, td').forEach(cell => {
-                        headers.push(cell.textContent.trim());
-                    });
-                }
-                
-                // Get data rows
-                for (let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    const rowData = {};
-                    const cells = row.querySelectorAll('td');
-                    
-                    cells.forEach((cell, index) => {
-                        const header = headers[index] || `Column${index + 1}`;
-                        rowData[header] = cell.textContent.trim();
-                    });
-                    
-                    if (Object.keys(rowData).length > 0) {
-                        data.push(rowData);
-                    }
-                }
-            }
+            const tables = container.querySelectorAll('table');
+            console.log('Found tables:', tables.length);
             
-            // Approach 2: Look for structured divs/spans with data
-            if (data.length === 0) {
-                const items = container.querySelectorAll('[class*="fixture"], [class*="result"], [class*="match"]');
-                items.forEach((item, index) => {
-                    const rowData = {
-                        Item: index + 1,
-                        Content: item.textContent.trim(),
-                        HTML: item.innerHTML
-                    };
+            if (tables.length > 0) {
+                tables.forEach((table, tableIndex) => {
+                    console.log(`Processing table ${tableIndex}`);
+                    const rows = table.querySelectorAll('tr');
+                    const headers = [];
                     
-                    // Look for specific data attributes or classes
-                    const dateEl = item.querySelector('[class*="date"], [class*="time"]');
-                    const teamEl = item.querySelectorAll('[class*="team"]');
-                    const scoreEl = item.querySelector('[class*="score"], [class*="result"]');
-                    
-                    if (dateEl) rowData.Date = dateEl.textContent.trim();
-                    if (teamEl.length >= 2) {
-                        rowData.HomeTeam = teamEl[0].textContent.trim();
-                        rowData.AwayTeam = teamEl[1].textContent.trim();
+                    // Get headers from first row
+                    if (rows.length > 0) {
+                        const headerRow = rows[0];
+                        const headerCells = headerRow.querySelectorAll('th, td');
+                        headerCells.forEach(cell => {
+                            headers.push(cell.textContent.trim());
+                        });
+                        console.log('Table headers:', headers);
                     }
-                    if (scoreEl) rowData.Score = scoreEl.textContent.trim();
                     
-                    data.push(rowData);
+                    // Get data rows
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        const rowData = { TableIndex: tableIndex };
+                        const cells = row.querySelectorAll('td, th');
+                        
+                        cells.forEach((cell, index) => {
+                            const header = headers[index] || `Column${index + 1}`;
+                            rowData[header] = cell.textContent.trim();
+                        });
+                        
+                        if (Object.keys(rowData).length > 1) { // More than just TableIndex
+                            data.push(rowData);
+                        }
+                    }
                 });
             }
             
-            // Approach 3: If no structured data found, extract all text content
+            // Approach 2: Look for list items or structured content
             if (data.length === 0) {
-                const textContent = container.textContent.trim();
-                if (textContent && textContent !== 'Loading sports data...') {
-                    // Split by lines and create basic structure
-                    const lines = textContent.split('\n').filter(line => line.trim());
-                    lines.forEach((line, index) => {
-                        if (line.trim()) {
-                            data.push({
-                                LineNumber: index + 1,
-                                Content: line.trim()
-                            });
-                        }
-                    });
-                }
+                const listItems = container.querySelectorAll('li, .fixture, .result, .match, .game');
+                console.log('Found list items or structured content:', listItems.length);
+                
+                listItems.forEach((item, index) => {
+                    const text = item.textContent.trim();
+                    if (text && text.length > 0) {
+                        data.push({
+                            ItemIndex: index + 1,
+                            Content: text,
+                            TagName: item.tagName,
+                            ClassName: item.className
+                        });
+                    }
+                });
             }
             
+            // Approach 3: Look for any divs with meaningful content
+            if (data.length === 0) {
+                const meaningfulDivs = container.querySelectorAll('div');
+                console.log('Found divs:', meaningfulDivs.length);
+                
+                meaningfulDivs.forEach((div, index) => {
+                    const text = div.textContent.trim();
+                    // Skip empty divs and the loading div
+                    if (text && text.length > 3 && !text.includes('Loading sports data')) {
+                        // Only include divs that seem to have meaningful content
+                        const hasNumbers = /\d/.test(text);
+                        const hasLetters = /[a-zA-Z]/.test(text);
+                        
+                        if (hasNumbers && hasLetters && text.length > 10) {
+                            data.push({
+                                DivIndex: index + 1,
+                                Content: text,
+                                HTML: div.innerHTML.substring(0, 200), // First 200 chars of HTML
+                                ClassName: div.className || 'no-class'
+                            });
+                        }
+                    }
+                });
+            }
+            
+            // Approach 4: Look for spans with content
+            if (data.length === 0) {
+                const spans = container.querySelectorAll('span');
+                console.log('Found spans:', spans.length);
+                
+                spans.forEach((span, index) => {
+                    const text = span.textContent.trim();
+                    if (text && text.length > 2) {
+                        data.push({
+                            SpanIndex: index + 1,
+                            Content: text,
+                            ClassName: span.className || 'no-class'
+                        });
+                    }
+                });
+            }
+            
+            // Approach 5: Look for links
+            if (data.length === 0) {
+                const links = container.querySelectorAll('a');
+                console.log('Found links:', links.length);
+                
+                links.forEach((link, index) => {
+                    const text = link.textContent.trim();
+                    const href = link.getAttribute('href');
+                    if (text && text.length > 0) {
+                        data.push({
+                            LinkIndex: index + 1,
+                            Content: text,
+                            URL: href || 'no-url',
+                            ClassName: link.className || 'no-class'
+                        });
+                    }
+                });
+            }
+            
+            // Approach 6: If still no structured data, split text content by lines
+            if (data.length === 0 && allText && allText !== 'Loading sports data...') {
+                console.log('Falling back to text parsing');
+                const lines = allText.split('\n').filter(line => line.trim().length > 3);
+                
+                lines.forEach((line, index) => {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine) {
+                        data.push({
+                            LineNumber: index + 1,
+                            Content: trimmedLine
+                        });
+                    }
+                });
+            }
+            
+            // Approach 7: If still nothing, capture raw HTML structure
+            if (data.length === 0 && allHTML && allHTML.length > 50) {
+                console.log('Capturing raw HTML structure');
+                data.push({
+                    Type: 'Raw HTML Content',
+                    Content: allText || 'No text content',
+                    HTMLLength: allHTML.length,
+                    HTMLPreview: allHTML.substring(0, 500) + (allHTML.length > 500 ? '...' : '')
+                });
+            }
+            
+            console.log('Final parsed data:', data);
             return data;
         }
 
@@ -408,6 +538,10 @@
             showStatus('Loading sports data...', 'info');
             document.getElementById('exportCSV').disabled = true;
             
+            // First, let's see what's in the GMS wrapper right now
+            const gmsWrapper = document.querySelector('.gms-wrapper');
+            console.log('Initial GMS wrapper content:', gmsWrapper.innerHTML);
+            
             try {
                 sportsData = await extractSportsData();
                 displayData(sportsData);
@@ -416,6 +550,20 @@
             } catch (error) {
                 showStatus(`Error loading data: ${error.message}`, 'error');
                 console.error('Error:', error);
+                
+                // Let's try to extract whatever we can find anyway
+                try {
+                    const fallbackData = parseGMSData(gmsWrapper);
+                    if (fallbackData.length > 0) {
+                        showStatus('Extracted some data despite timeout - check preview', 'info');
+                        sportsData = fallbackData;
+                        displayData(fallbackData);
+                        document.getElementById('exportCSV').disabled = false;
+                        dataLoaded = true;
+                    }
+                } catch (fallbackError) {
+                    console.error('Fallback extraction also failed:', fallbackError);
+                }
             }
         });
 
@@ -443,12 +591,44 @@
             gmsWrapper.innerHTML = '<div class="loading">Loading sports data...</div>';
         });
 
+        // Add a manual inspect button for debugging
+        const debugButton = document.createElement('button');
+        debugButton.textContent = 'Debug: Inspect Current Content';
+        debugButton.className = 'btn-secondary';
+        debugButton.onclick = () => {
+            const gmsWrapper = document.querySelector('.gms-wrapper');
+            console.log('=== DEBUG INFO ===');
+            console.log('HTML Content:', gmsWrapper.innerHTML);
+            console.log('Text Content:', gmsWrapper.textContent);
+            console.log('Child elements:', gmsWrapper.children.length);
+            console.log('All elements:', gmsWrapper.querySelectorAll('*').length);
+            
+            // Try parsing whatever is there
+            try {
+                const debugData = parseGMSData(gmsWrapper);
+                console.log('Parsed data:', debugData);
+                if (debugData.length > 0) {
+                    sportsData = debugData;
+                    displayData(debugData);
+                    document.getElementById('exportCSV').disabled = false;
+                    showStatus('Debug extraction successful!', 'success');
+                }
+            } catch (error) {
+                console.error('Debug parsing failed:', error);
+                showStatus('Debug parsing failed - check console', 'error');
+            }
+        };
+        
+        document.querySelector('.controls').appendChild(debugButton);
+
         // Auto-load data when page loads
         window.addEventListener('load', () => {
-            // Give the GMS API time to load
+            // Give the GMS API more time to load
             setTimeout(() => {
-                document.getElementById('loadData').click();
-            }, 2000);
+                console.log('Auto-loading data...');
+                // Don't auto-click, let user manually trigger
+                showStatus('Page loaded. Click "Load Sports Data" to extract data.', 'info');
+            }, 3000);
         });
     </script>
 </body>

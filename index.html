@@ -188,14 +188,26 @@
             statusEl.classList.remove('hidden');
         }
 
-        // Simple parsing function with better error handling
+        // Simple parsing function with better error handling (UPDATED)
         function parseGMSData(container) {
             const data = [];
             console.log('=== STARTING PARSE ===');
             
             try {
+                // First try table parsing
+                const tables = container.querySelectorAll('table');
+                if (tables.length > 0) {
+                    console.log('Found tables, trying table parsing...');
+                    const tableData = parseTableData(container);
+                    if (tableData.length > 0) {
+                        console.log('Table parsing successful:', tableData.length, 'records');
+                        return tableData;
+                    }
+                }
+                
+                // Try text parsing
                 const allText = container.textContent.trim();
-                console.log('Raw text content:', allText);
+                console.log('Raw text content length:', allText.length);
                 
                 if (!allText || allText.length < 10) {
                     console.log('No meaningful content found');
@@ -268,18 +280,86 @@
                     }
                 }
                 
+                // If no structured data found, try the manual chunking approach
+                if (data.length === 0) {
+                    console.log('No structured data found, trying manual chunking...');
+                    const chunks = allText.split(/(?=\d{1,2}\s+\w{3}\s+\d{4})/);
+                    chunks.forEach((chunk, index) => {
+                        if (chunk.trim().length > 20) {
+                            // Try to parse each chunk as a fixture
+                            const chunkData = parseChunkAsFixture(chunk.trim());
+                            if (chunkData) {
+                                data.push(chunkData);
+                            } else {
+                                // Fallback: add as raw content
+                                data.push({
+                                    ChunkNumber: index + 1,
+                                    RawContent: chunk.trim().substring(0, 200),
+                                    Date: extractDateFromChunk(chunk.trim()),
+                                    Content: chunk.trim()
+                                });
+                            }
+                        }
+                    });
+                }
+                
                 console.log('=== PARSE COMPLETE ===');
                 console.log('Total fixtures found:', data.length);
                 return data;
                 
             } catch (error) {
                 console.error('Parse error:', error);
-                return [{
-                    Type: 'Parse Error',
-                    Error: error.message,
-                    Content: container.textContent.substring(0, 200)
-                }];
+                // Return something rather than nothing
+                const allText = container.textContent.trim();
+                if (allText.length > 50) {
+                    return [{
+                        Type: 'Parse Error - Raw Content',
+                        Error: error.message,
+                        Content: allText.substring(0, 500),
+                        FullContent: allText
+                    }];
+                }
+                return [];
             }
+        }
+
+        // Helper function to parse individual chunks
+        function parseChunkAsFixture(chunk) {
+            try {
+                const dateMatch = chunk.match(/(\d{1,2}\s+\w{3}\s+\d{4})/);
+                if (!dateMatch) return null;
+                
+                const fixture = { Date: dateMatch[1] };
+                const afterDate = chunk.replace(dateMatch[1], '').trim();
+                
+                const scoreMatch = afterDate.match(/(\d+\s*:\s*\d+)/);
+                if (scoreMatch) {
+                    fixture.Score = scoreMatch[1];
+                    const beforeScore = afterDate.substring(0, afterDate.indexOf(scoreMatch[1])).trim();
+                    const afterScore = afterDate.substring(afterDate.indexOf(scoreMatch[1]) + scoreMatch[1].length).trim();
+                    
+                    fixture.HomeTeam = beforeScore;
+                    const result = parseAwayTeamAndLocation(afterScore);
+                    fixture.AwayTeam = result.awayTeam;
+                    fixture.Location = result.location;
+                } else {
+                    fixture.Score = '';
+                    fixture.HomeTeam = afterDate;
+                    fixture.AwayTeam = '';
+                    fixture.Location = '';
+                }
+                
+                return fixture;
+            } catch (error) {
+                console.error('Error parsing chunk:', error);
+                return null;
+            }
+        }
+
+        // Helper function to extract date from chunk
+        function extractDateFromChunk(chunk) {
+            const dateMatch = chunk.match(/(\d{1,2}\s+\w{3}\s+\d{4})/);
+            return dateMatch ? dateMatch[1] : '';
         }
 
         // Separate function to parse away team and location

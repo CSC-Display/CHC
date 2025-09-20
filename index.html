@@ -313,7 +313,7 @@
             
             // Try different approaches to extract data
             
-            // Approach 1: Look for table data
+            // Approach 1: Look for table data (Enhanced for sports fixtures)
             const tables = container.querySelectorAll('table');
             console.log('Found tables:', tables.length);
             
@@ -321,55 +321,174 @@
                 tables.forEach((table, tableIndex) => {
                     console.log(`Processing table ${tableIndex}`);
                     const rows = table.querySelectorAll('tr');
-                    const headers = [];
+                    let headers = [];
                     
-                    // Get headers from first row
+                    // Get headers - try different approaches
                     if (rows.length > 0) {
                         const headerRow = rows[0];
                         const headerCells = headerRow.querySelectorAll('th, td');
+                        
+                        // Extract headers
                         headerCells.forEach(cell => {
-                            headers.push(cell.textContent.trim());
+                            const headerText = cell.textContent.trim();
+                            if (headerText) {
+                                headers.push(headerText);
+                            }
                         });
-                        console.log('Table headers:', headers);
+                        
+                        console.log('Table headers found:', headers);
+                        
+                        // If no proper headers found, create default ones based on sports data
+                        if (headers.length === 0 || headers.every(h => h.length < 2)) {
+                            headers = ['Date', 'Home Team', 'Score', 'Away Team', 'Location'];
+                            console.log('Using default headers:', headers);
+                        }
                     }
                     
-                    // Get data rows
-                    for (let i = 1; i < rows.length; i++) {
+                    // Get data rows (start from row 0 if no headers, row 1 if headers exist)
+                    const startRow = headers.length > 0 && rows[0]?.querySelector('th') ? 1 : 0;
+                    
+                    for (let i = startRow; i < rows.length; i++) {
                         const row = rows[i];
-                        const rowData = { TableIndex: tableIndex };
+                        const rowData = {};
                         const cells = row.querySelectorAll('td, th');
                         
+                        console.log(`Row ${i} has ${cells.length} cells`);
+                        
                         cells.forEach((cell, index) => {
-                            const header = headers[index] || `Column${index + 1}`;
-                            rowData[header] = cell.textContent.trim();
+                            const cellText = cell.textContent.trim();
+                            const header = headers[index] || `Column_${index + 1}`;
+                            
+                            // Special handling for sports data
+                            if (cellText) {
+                                // Check if this cell contains a score pattern (e.g., "2:1", "02:00", "3-1")
+                                if (/^\d+[\s]*[:\-]\s*\d+$/.test(cellText)) {
+                                    rowData[header] = cellText;
+                                }
+                                // Check if this looks like a date
+                                else if (/\d{1,2}[-\/\s]\w{3}[-\/\s]\d{2,4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(cellText)) {
+                                    rowData[header] = cellText;
+                                }
+                                // Regular content
+                                else {
+                                    rowData[header] = cellText;
+                                }
+                            }
                         });
                         
-                        if (Object.keys(rowData).length > 1) { // More than just TableIndex
+                        // Only add row if it has meaningful data
+                        const meaningfulData = Object.values(rowData).some(val => val && val.length > 0);
+                        if (meaningfulData) {
+                            console.log('Adding row data:', rowData);
                             data.push(rowData);
                         }
                     }
                 });
+                
+                // If we found table data, return it
+                if (data.length > 0) {
+                    console.log('Successfully parsed table data:', data);
+                    return data;
+                }
             }
             
-            // Approach 2: Look for list items or structured content
+            // Approach 2: Parse raw text data for sports fixtures
+            if (data.length === 0 && allText && allText.length > 50) {
+                console.log('Parsing raw text data for sports fixtures');
+                
+                // Split text into potential fixture blocks
+                const lines = allText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                console.log('Text lines found:', lines);
+                
+                // Try to identify fixture patterns in the text
+                let currentFixture = {};
+                let fixtureCount = 0;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    // Skip headers or empty lines
+                    if (line.toLowerCase().includes('date') || 
+                        line.toLowerCase().includes('home') || 
+                        line.toLowerCase().includes('away') ||
+                        line.toLowerCase().includes('score') ||
+                        line.toLowerCase().includes('location') ||
+                        line.length < 3) {
+                        continue;
+                    }
+                    
+                    // Check if this line looks like a date
+                    if (/\d{1,2}[-\/\s]\w{3}[-\/\s]\d{2,4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(line)) {
+                        // If we have a previous fixture, save it
+                        if (Object.keys(currentFixture).length > 0) {
+                            data.push({ ...currentFixture, FixtureNumber: fixtureCount++ });
+                        }
+                        // Start new fixture
+                        currentFixture = { Date: line };
+                    }
+                    // Check if this line looks like a score
+                    else if (/^\d+[\s]*[:\-]\s*\d+$/.test(line)) {
+                        currentFixture.Score = line;
+                    }
+                    // Check if this line contains team names (look for patterns like "Team Name (F)" or just team names)
+                    else if (line.length > 3 && !currentFixture.HomeTeam) {
+                        currentFixture.HomeTeam = line;
+                    }
+                    else if (line.length > 3 && currentFixture.HomeTeam && !currentFixture.AwayTeam) {
+                        currentFixture.AwayTeam = line;
+                    }
+                    // Assume remaining meaningful lines are location
+                    else if (line.length > 5 && !currentFixture.Location) {
+                        currentFixture.Location = line;
+                    }
+                }
+                
+                // Don't forget the last fixture
+                if (Object.keys(currentFixture).length > 0) {
+                    data.push({ ...currentFixture, FixtureNumber: fixtureCount++ });
+                }
+                
+                console.log('Parsed fixtures from text:', data);
+                
+                if (data.length > 0) {
+                    return data;
+                }
+            }
+            
+            // Approach 3: Look for structured content with specific selectors
             if (data.length === 0) {
-                const listItems = container.querySelectorAll('li, .fixture, .result, .match, .game');
-                console.log('Found list items or structured content:', listItems.length);
+                const listItems = container.querySelectorAll('li, .fixture, .result, .match, .game, .event');
+                console.log('Found structured items:', listItems.length);
                 
                 listItems.forEach((item, index) => {
                     const text = item.textContent.trim();
-                    if (text && text.length > 0) {
-                        data.push({
-                            ItemIndex: index + 1,
-                            Content: text,
-                            TagName: item.tagName,
-                            ClassName: item.className
-                        });
+                    if (text && text.length > 10) {
+                        // Try to parse individual fixture from this item
+                        const fixtureData = { ItemIndex: index + 1 };
+                        
+                        // Look for date patterns
+                        const dateMatch = text.match(/\d{1,2}[-\/\s]\w{3}[-\/\s]\d{2,4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/);
+                        if (dateMatch) {
+                            fixtureData.Date = dateMatch[0];
+                        }
+                        
+                        // Look for score patterns
+                        const scoreMatch = text.match(/\d+[\s]*[:\-]\s*\d+/);
+                        if (scoreMatch) {
+                            fixtureData.Score = scoreMatch[0];
+                        }
+                        
+                        // Store full content
+                        fixtureData.Content = text;
+                        fixtureData.TagName = item.tagName;
+                        fixtureData.ClassName = item.className;
+                        
+                        data.push(fixtureData);
                     }
                 });
             }
             
-            // Approach 3: Look for any divs with meaningful content
+            // Approach 4: Look for any divs with meaningful content
             if (data.length === 0) {
                 const meaningfulDivs = container.querySelectorAll('div');
                 console.log('Found divs:', meaningfulDivs.length);
@@ -377,16 +496,14 @@
                 meaningfulDivs.forEach((div, index) => {
                     const text = div.textContent.trim();
                     // Skip empty divs and the loading div
-                    if (text && text.length > 3 && !text.includes('Loading sports data')) {
-                        // Only include divs that seem to have meaningful content
+                    if (text && text.length > 10 && !text.includes('Loading sports data')) {
                         const hasNumbers = /\d/.test(text);
                         const hasLetters = /[a-zA-Z]/.test(text);
                         
-                        if (hasNumbers && hasLetters && text.length > 10) {
+                        if (hasNumbers && hasLetters) {
                             data.push({
                                 DivIndex: index + 1,
                                 Content: text,
-                                HTML: div.innerHTML.substring(0, 200), // First 200 chars of HTML
                                 ClassName: div.className || 'no-class'
                             });
                         }
@@ -394,66 +511,16 @@
                 });
             }
             
-            // Approach 4: Look for spans with content
-            if (data.length === 0) {
-                const spans = container.querySelectorAll('span');
-                console.log('Found spans:', spans.length);
+            // Approach 5: Final fallback - create structured data from any content
+            if (data.length === 0 && allText && allText.length > 50) {
+                console.log('Final fallback: creating structured data from all content');
                 
-                spans.forEach((span, index) => {
-                    const text = span.textContent.trim();
-                    if (text && text.length > 2) {
-                        data.push({
-                            SpanIndex: index + 1,
-                            Content: text,
-                            ClassName: span.className || 'no-class'
-                        });
-                    }
-                });
-            }
-            
-            // Approach 5: Look for links
-            if (data.length === 0) {
-                const links = container.querySelectorAll('a');
-                console.log('Found links:', links.length);
-                
-                links.forEach((link, index) => {
-                    const text = link.textContent.trim();
-                    const href = link.getAttribute('href');
-                    if (text && text.length > 0) {
-                        data.push({
-                            LinkIndex: index + 1,
-                            Content: text,
-                            URL: href || 'no-url',
-                            ClassName: link.className || 'no-class'
-                        });
-                    }
-                });
-            }
-            
-            // Approach 6: If still no structured data, split text content by lines
-            if (data.length === 0 && allText && allText !== 'Loading sports data...') {
-                console.log('Falling back to text parsing');
-                const lines = allText.split('\n').filter(line => line.trim().length > 3);
-                
-                lines.forEach((line, index) => {
-                    const trimmedLine = line.trim();
-                    if (trimmedLine) {
-                        data.push({
-                            LineNumber: index + 1,
-                            Content: trimmedLine
-                        });
-                    }
-                });
-            }
-            
-            // Approach 7: If still nothing, capture raw HTML structure
-            if (data.length === 0 && allHTML && allHTML.length > 50) {
-                console.log('Capturing raw HTML structure');
+                // Just capture everything as a single record for manual review
                 data.push({
-                    Type: 'Raw HTML Content',
-                    Content: allText || 'No text content',
-                    HTMLLength: allHTML.length,
-                    HTMLPreview: allHTML.substring(0, 500) + (allHTML.length > 500 ? '...' : '')
+                    Type: 'Raw Content',
+                    AllText: allText,
+                    TextLength: allText.length,
+                    Note: 'Manual parsing may be required'
                 });
             }
             

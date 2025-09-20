@@ -148,6 +148,32 @@ class SportsFixtureImporter:
                 except Exception as e:
                     logger.info(f"JavaScript API call failed: {e}")
             
+            # Try web scraping as a last resort
+            if not success:
+                logger.info("Trying web scraping approach...")
+                success = self.try_web_scraping_approach(club_id)
+            
+            if not success:
+                logger.warning("All data extraction methods failed. This may be due to:")
+                logger.warning("1. The API requiring authentication or specific headers")
+                logger.warning("2. The API being browser-only (JavaScript required)")
+                logger.warning("3. The endpoints being different than expected")
+                logger.warning("4. Rate limiting or IP restrictions")
+                logger.warning("5. The widget loading data dynamically via AJAX")
+                logger.warning("")
+                logger.warning("To get real data, you may need to:")
+                logger.warning("- Contact gmsfeed.co.uk for API documentation")
+                logger.warning("- Use browser automation (Selenium)")
+                logger.warning("- Find the actual API endpoints used by the widget")
+                logger.warning("")
+                logger.warning("Using realistic sample data as fallback...")
+                self.add_sample_data()
+                
+        except Exception as e:
+            logger.error(f"Error fetching fixture data: {e}")
+            logger.info("Falling back to sample data")
+            self.add_sample_data()
+    
     def try_web_scraping_approach(self, club_id: str) -> bool:
         """Try to scrape data from a page that uses the gmsfeed widget"""
         try:
@@ -191,11 +217,22 @@ class SportsFixtureImporter:
         except Exception as e:
             logger.error(f"Web scraping approach failed: {e}")
             return False
-                
-        except Exception as e:
-            logger.error(f"Error fetching fixture data: {e}")
-            logger.info("Falling back to sample data")
-            self.add_sample_data()
+    
+    def _process_fixture_data(self, data: Any) -> None:
+        """Process the fixture data from API response"""
+        if isinstance(data, list):
+            self.fixture_data = data
+        elif isinstance(data, dict):
+            possible_keys = ['fixtures', 'results', 'matches', 'data', 'items', 'games']
+            for key in possible_keys:
+                if key in data and isinstance(data[key], list):
+                    self.fixture_data = data[key]
+                    logger.info(f"Found fixture data in '{key}' field")
+                    break
+            else:
+                self.fixture_data = [data]
+        
+        logger.info(f"Processed {len(self.fixture_data)} fixture records")
     
     def _parse_html_response(self, html_content: str) -> None:
         """Parse HTML response if API returns HTML instead of JSON"""
@@ -391,20 +428,6 @@ class SportsFixtureImporter:
             
         except Exception as e:
             logger.error(f"Simple HTML parsing failed: {e}")
-        """Process the fixture data from API response"""
-        if isinstance(data, list):
-            self.fixture_data = data
-        elif isinstance(data, dict):
-            possible_keys = ['fixtures', 'results', 'matches', 'data', 'items', 'games']
-            for key in possible_keys:
-                if key in data and isinstance(data[key], list):
-                    self.fixture_data = data[key]
-                    logger.info(f"Found fixture data in '{key}' field")
-                    break
-            else:
-                self.fixture_data = [data]
-        
-        logger.info(f"Processed {len(self.fixture_data)} fixture records")
     
     def add_sample_data(self) -> None:
         """Add sample fixture data that looks realistic"""

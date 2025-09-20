@@ -155,6 +155,13 @@
         
         <div id="status" class="hidden"></div>
         
+        <div id="dataPreview" class="data-preview hidden">
+            <table id="dataTable">
+                <thead id="tableHeader"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        
         <!-- Original GMS wrapper -->
         <div class="gms-wrapper gms-ajax" 
              data-method="api" 
@@ -165,13 +172,6 @@
              data-options="showGender:yes,showList:yes"
              data-css="no">
             <div class="loading">Loading sports data...</div>
-        </div>
-        
-        <div id="dataPreview" class="data-preview hidden">
-            <table id="dataTable">
-                <thead id="tableHeader"></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
         </div>
     </div>
 
@@ -641,7 +641,7 @@
             return data;
         }
 
-        // Display data in preview table
+        // Display data in preview table (without FixtureText column)
         function displayData(data) {
             if (data.length === 0) {
                 showStatus('No data found to display', 'error');
@@ -656,10 +656,15 @@
             header.innerHTML = '';
             body.innerHTML = '';
             
-            // Get all unique keys from the data
+            // Get all unique keys from the data, but exclude unwanted columns
             const allKeys = new Set();
             data.forEach(row => {
-                Object.keys(row).forEach(key => allKeys.add(key));
+                Object.keys(row).forEach(key => {
+                    // Skip columns we don't want to display
+                    if (!['FixtureText', 'OriginalText', 'FixtureNumber'].includes(key)) {
+                        allKeys.add(key);
+                    }
+                });
             });
             const keys = Array.from(allKeys);
             
@@ -687,14 +692,19 @@
             showStatus(`Successfully loaded ${data.length} records`, 'success');
         }
 
-        // Convert data to CSV
+        // Convert data to CSV (without unwanted columns)
         function convertToCSV(data) {
             if (data.length === 0) return '';
             
-            // Get all unique keys
+            // Get all unique keys but exclude unwanted columns
             const allKeys = new Set();
             data.forEach(row => {
-                Object.keys(row).forEach(key => allKeys.add(key));
+                Object.keys(row).forEach(key => {
+                    // Skip columns we don't want in the CSV
+                    if (!['FixtureText', 'OriginalText', 'FixtureNumber'].includes(key)) {
+                        allKeys.add(key);
+                    }
+                });
             });
             const keys = Array.from(allKeys);
             

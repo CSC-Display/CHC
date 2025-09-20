@@ -246,17 +246,18 @@
                         let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
                         console.log('After date:', afterDate);
                         
-                        // Look for score pattern
-                        const scorePattern = /(\d+\s*:\s*\d+)/;
+                        // Look for score pattern - be more specific about score format
+                        const scorePattern = /(\d{1,2}\s*:\s*\d{1,2})/;
                         const scoreMatch = afterDate.match(scorePattern);
                         
                         if (scoreMatch) {
                             console.log('Found score:', scoreMatch[1]);
                             fixture.Score = scoreMatch[1];
                             
-                            // Split by score
-                            const beforeScore = afterDate.substring(0, afterDate.indexOf(scoreMatch[1])).trim();
-                            const afterScore = afterDate.substring(afterDate.indexOf(scoreMatch[1]) + scoreMatch[1].length).trim();
+                            // Split by score using the exact position
+                            const scoreIndex = afterDate.indexOf(scoreMatch[1]);
+                            const beforeScore = afterDate.substring(0, scoreIndex).trim();
+                            const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
                             
                             console.log('Before score (home team):', beforeScore);
                             console.log('After score (away + location):', afterScore);
@@ -333,11 +334,13 @@
                 // Use substring instead of replace to preserve the date
                 const afterDate = chunk.substring(chunk.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
                 
-                const scoreMatch = afterDate.match(/(\d+\s*:\s*\d+)/);
+                // More specific score pattern
+                const scoreMatch = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/);
                 if (scoreMatch) {
                     fixture.Score = scoreMatch[1];
-                    const beforeScore = afterDate.substring(0, afterDate.indexOf(scoreMatch[1])).trim();
-                    const afterScore = afterDate.substring(afterDate.indexOf(scoreMatch[1]) + scoreMatch[1].length).trim();
+                    const scoreIndex = afterDate.indexOf(scoreMatch[1]);
+                    const beforeScore = afterDate.substring(0, scoreIndex).trim();
+                    const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
                     
                     fixture.HomeTeam = beforeScore;
                     const result = parseAwayTeamAndLocation(afterScore);

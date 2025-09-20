@@ -392,66 +392,179 @@
                 }
             }
             
-            // Approach 2: Parse raw text data for sports fixtures
+            // Approach 2: Parse raw text data for sports fixtures (FIXED)
             if (data.length === 0 && allText && allText.length > 50) {
                 console.log('Parsing raw text data for sports fixtures');
                 
-                // Split text into potential fixture blocks
-                const lines = allText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                // Split text into lines and clean them
+                const lines = allText.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+                
                 console.log('Text lines found:', lines);
                 
-                // Try to identify fixture patterns in the text
-                let currentFixture = {};
-                let fixtureCount = 0;
+                // Look for fixture patterns - each fixture should be a group of related lines
+                const fixtures = [];
+                let i = 0;
                 
-                for (let i = 0; i < lines.length; i++) {
+                while (i < lines.length) {
                     const line = lines[i];
                     
-                    // Skip headers or empty lines
+                    // Skip headers
                     if (line.toLowerCase().includes('date') || 
                         line.toLowerCase().includes('home') || 
                         line.toLowerCase().includes('away') ||
                         line.toLowerCase().includes('score') ||
                         line.toLowerCase().includes('location') ||
-                        line.length < 3) {
+                        line.includes('[Club match') ||
+                        line.length < 5) {
+                        i++;
                         continue;
                     }
                     
-                    // Check if this line looks like a date
-                    if (/\d{1,2}[-\/\s]\w{3}[-\/\s]\d{2,4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(line)) {
-                        // If we have a previous fixture, save it
-                        if (Object.keys(currentFixture).length > 0) {
-                            data.push({ ...currentFixture, FixtureNumber: fixtureCount++ });
+                    // Check if this line looks like a date (start of new fixture)
+                    const dateMatch = line.match(/(\d{1,2}\s+\w{3}\s+\d{4})/);
+                    if (dateMatch) {
+                        const fixture = {
+                            Date: dateMatch[1],
+                            OriginalText: line
+                        };
+                        
+                        // Extract the rest of the fixture data from this line
+                        // Pattern: "20 Sep 2025Chelmsford 5 (F)2 : 1Southend & Benfleet 3Chelmsford HC - Chelmer Park - Pitch 1"
+                        let remainingText = line.replace(dateMatch[1], '').trim();
+                        
+                        // Try to extract score pattern first (easier to identify)
+                        const scoreMatch = remainingText.match(/(\d+\s*:\s*\d+)/);
+                        if (scoreMatch) {
+                            fixture.Score = scoreMatch[1];
+                            
+                            // Split by score to get home team (before) and away team + location (after)
+                            const parts = remainingText.split(scoreMatch[1]);
+                            if (parts.length >= 2) {
+                                fixture.HomeTeam = parts[0].trim();
+                                
+                                // For away team and location, we need to be smarter
+                                const afterScore = parts[1].trim();
+                                
+                                // Look for location patterns (containing "HC", "School", "Club", "Park", "Pitch")
+                                const locationMatch = afterScore.match(/(.+?)((?:[A-Za-z\s]+ HC|[A-Za-z\s]+ School|[A-Za-z\s]+ Club|[A-Za-z\s]+ Park)[^A-Za-z]*.*)/);
+                                if (locationMatch) {
+                                    fixture.AwayTeam = locationMatch[1].trim();
+                                    fixture.Location = locationMatch[2].trim();
+                                } else {
+                                    // Fallback: try to split by known patterns
+                                    const words = afterScore.split(/(?=[A-Z][a-z])/);
+                                    if (words.length >= 2) {
+                                        fixture.AwayTeam = words[0].trim();
+                                        fixture.Location = words.slice(1).join('').trim();
+                                    } else {
+                                        fixture.AwayTeam = afterScore;
+                                        fixture.Location = '';
+                                    }
+                                }
+                            }
+                        } else {
+                            // No score found, treat as fixture (not result)
+                            fixture.Score = '';
+                            fixture.HomeTeam = remainingText;
+                            fixture.AwayTeam = '';
+                            fixture.Location = '';
                         }
-                        // Start new fixture
-                        currentFixture = { Date: line };
+                        
+                        fixtures.push(fixture);
                     }
-                    // Check if this line looks like a score
-                    else if (/^\d+[\s]*[:\-]\s*\d+$/.test(line)) {
-                        currentFixture.Score = line;
-                    }
-                    // Check if this line contains team names (look for patterns like "Team Name (F)" or just team names)
-                    else if (line.length > 3 && !currentFixture.HomeTeam) {
-                        currentFixture.HomeTeam = line;
-                    }
-                    else if (line.length > 3 && currentFixture.HomeTeam && !currentFixture.AwayTeam) {
-                        currentFixture.AwayTeam = line;
-                    }
-                    // Assume remaining meaningful lines are location
-                    else if (line.length > 5 && !currentFixture.Location) {
-                        currentFixture.Location = line;
-                    }
+                    
+                    i++;
                 }
                 
-                // Don't forget the last fixture
-                if (Object.keys(currentFixture).length > 0) {
-                    data.push({ ...currentFixture, FixtureNumber: fixtureCount++ });
+                console.log('Parsed fixtures:', fixtures);
+                
+                if (fixtures.length > 0) {
+                    return fixtures;
                 }
                 
-                console.log('Parsed fixtures from text:', data);
-                
-                if (data.length > 0) {
-                    return data;
+                // Alternative approach: try to split the long concatenated string
+                if (fixtures.length === 0) {
+                    console.log('Trying alternative parsing for concatenated data');
+                    
+                    // Look for date patterns in the text to split fixtures
+                    const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/g;
+                    const dateMatches = [];
+                    let match;
+                    
+                    while ((match = datePattern.exec(allText)) !== null) {
+                        dateMatches.push({
+                            date: match[1],
+                            index: match.index
+                        });
+                    }
+                    
+                    console.log('Date matches found:', dateMatches);
+                    
+                    // Split text at each date
+                    for (let j = 0; j < dateMatches.length; j++) {
+                        const currentMatch = dateMatches[j];
+                        const nextMatch = dateMatches[j + 1];
+                        
+                        const startIndex = currentMatch.index;
+                        const endIndex = nextMatch ? nextMatch.index : allText.length;
+                        const fixtureText = allText.substring(startIndex, endIndex).trim();
+                        
+                        // Parse this individual fixture
+                        const fixture = {
+                            Date: currentMatch.date,
+                            FixtureText: fixtureText
+                        };
+                        
+                        // Extract score
+                        const scoreMatch = fixtureText.match(/(\d+\s*:\s*\d+)/);
+                        if (scoreMatch) {
+                            fixture.Score = scoreMatch[1];
+                            
+                            // Split around the score
+                            const beforeScore = fixtureText.substring(0, fixtureText.indexOf(scoreMatch[1]));
+                            const afterScore = fixtureText.substring(fixtureText.indexOf(scoreMatch[1]) + scoreMatch[1].length);
+                            
+                            // Home team is after the date
+                            fixture.HomeTeam = beforeScore.replace(currentMatch.date, '').trim();
+                            
+                            // Away team and location parsing
+                            const afterScoreTrimmed = afterScore.trim();
+                            
+                            // Try to identify where team name ends and location begins
+                            const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre'];
+                            let splitPoint = -1;
+                            
+                            for (const keyword of locationKeywords) {
+                                const keywordIndex = afterScoreTrimmed.indexOf(keyword);
+                                if (keywordIndex > 0) {
+                                    // Find the start of the word containing this keyword
+                                    let wordStart = keywordIndex;
+                                    while (wordStart > 0 && afterScoreTrimmed[wordStart - 1] !== ' ') {
+                                        wordStart--;
+                                    }
+                                    splitPoint = wordStart;
+                                    break;
+                                }
+                            }
+                            
+                            if (splitPoint > 0) {
+                                fixture.AwayTeam = afterScoreTrimmed.substring(0, splitPoint).trim();
+                                fixture.Location = afterScoreTrimmed.substring(splitPoint).trim();
+                            } else {
+                                // Fallback: assume first part is team name
+                                const parts = afterScoreTrimmed.split(/(?=[A-Z])/);
+                                fixture.AwayTeam = parts[0] || afterScoreTrimmed;
+                                fixture.Location = parts.slice(1).join('') || '';
+                            }
+                        }
+                        
+                        fixtures.push(fixture);
+                    }
+                    
+                    console.log('Alternative parsed fixtures:', fixtures);
+                    return fixtures;
                 }
             }
             

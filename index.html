@@ -242,8 +242,8 @@
                         console.log('Found date:', dateMatch[1]);
                         const fixture = { Date: dateMatch[1] };
                         
-                        // Get text after the date
-                        const afterDate = line.replace(dateMatch[1], '').trim();
+                        // Get text after the date - be more careful with replacement
+                        let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
                         console.log('After date:', afterDate);
                         
                         // Look for score pattern
@@ -330,7 +330,8 @@
                 if (!dateMatch) return null;
                 
                 const fixture = { Date: dateMatch[1] };
-                const afterDate = chunk.replace(dateMatch[1], '').trim();
+                // Use substring instead of replace to preserve the date
+                const afterDate = chunk.substring(chunk.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
                 
                 const scoreMatch = afterDate.match(/(\d+\s*:\s*\d+)/);
                 if (scoreMatch) {

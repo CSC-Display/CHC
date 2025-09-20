@@ -578,26 +578,20 @@
                             // Home team is after the date
                             fixture.HomeTeam = beforeScore.replace(currentMatch.date, '').trim();
                             
-                            // Away team and location parsing with improved logic
-                            const afterScoreTrimmed = afterScore.trim();
-                            
-                            let awayTeam = '';
-                            let location = '';
-                            
                             // Special case: Check if this is a Chelmsford home game (location will be ChelmsfordHC)
-                            const chelmsfordHomeMatch = afterScoreTrimmed.match(/^(.+?)(ChelmsfordHC\s*-\s*Chelmer\s*Park\s*-\s*Pitch\s*\d+)$/i);
+                            const chelmsfordHomeMatch = afterScoreTrimmed.match(/^(.+?)(ChelmsfordHC\s*-\s*Chelmer\s*Park\s*-\s*Pitch\s*\d)$/i);
                             if (chelmsfordHomeMatch) {
                                 awayTeam = chelmsfordHomeMatch[1].trim();
                                 location = chelmsfordHomeMatch[2].trim();
                             }
-                            // Pattern 1: Check for Chelmsford away teams (Chelmsford + number + optional (M/F))
+                            // Pattern 1: Check for Chelmsford away teams (Chelmsford + single digit + optional (M/F))
                             else {
-                                const chelmsfordMatch = afterScoreTrimmed.match(/^(.*?Chelmsford\s+\d+(?:\s*\([MF]\))?)(.*)/i);
+                                const chelmsfordMatch = afterScoreTrimmed.match(/^(.*?Chelmsford\s+\d(?:\s*\([MF]\))?)(.*)/i);
                                 if (chelmsfordMatch) {
                                     awayTeam = chelmsfordMatch[1].trim();
                                     location = chelmsfordMatch[2].trim();
                                 }
-                                // Pattern 2: Look for other teams that end with numbers
+                                // Pattern 2: Look for other teams that end with single digits
                                 else {
                                     // Try to identify where team name ends by looking for location keywords
                                     const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
@@ -625,9 +619,9 @@
                                         awayTeam = afterScoreTrimmed.substring(0, bestSplit).trim();
                                         location = afterScoreTrimmed.substring(bestSplit).trim();
                                     }
-                                    // Pattern 3: Look for team names ending with numbers (like "Southend & Benfleet 3")
+                                    // Pattern 3: Look for team names ending with single digits (like "Waltham Forest 1", "Southend & Benfleet 3")
                                     else {
-                                        const teamNumberMatch = afterScoreTrimmed.match(/^(.*?\b\w+\s+\d+)(.*)$/);
+                                        const teamNumberMatch = afterScoreTrimmed.match(/^(.*?\b\w+\s+\d)(.*)$/);
                                         if (teamNumberMatch) {
                                             awayTeam = teamNumberMatch[1].trim();
                                             location = teamNumberMatch[2].trim();

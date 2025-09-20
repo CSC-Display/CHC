@@ -1,4 +1,0 @@
-attendance,away_score,away_team,club_id,competition,data_source,date,fixture_id,home_score,home_team,last_updated,match_type,status,time,venue
-85,2,Visiting Team HC,e9ba26d3-7e18-4772-abb0-584e887c9d38,Surrey League Division 1,sample_data,2025-09-20,CHC20250920001,3,Chobham Hockey Club,2025-09-20T22:13:25.844327,League,Full Time,15:00,Chobham Recreation Ground
-120,4,Chobham Hockey Club,e9ba26d3-7e18-4772-abb0-584e887c9d38,Surrey Cup,sample_data,2025-09-20,CHC20250920002,1,Another Club HC,2025-09-20T22:13:25.844327,Cup,Full Time,17:30,Away Ground
-,,Future Opponents HC,e9ba26d3-7e18-4772-abb0-584e887c9d38,Surrey League Division 1,sample_data,2025-09-20,CHC20250920003,,Chobham Hockey Club,2025-09-20T22:13:25.844327,League,Scheduled,TBD,Chobham Recreation Ground

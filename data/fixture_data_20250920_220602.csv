@@ -1,3 +1,0 @@
-attendance,away_score,away_team,competition,data_source,date,fixture_id,home_score,home_team,last_updated,status,time,venue
-45000,1,Away Team United,League Championship,sample_data,2025-09-20,FIX20250920001,2,Home Team FC,2025-09-20T22:06:02.804999,Full Time,15:00,Home Stadium
-,,Visitors United,League Championship,sample_data,2025-09-20,FIX20250920002,,Another Team FC,2025-09-20T22:06:02.805018,Scheduled,17:30,Away Stadium

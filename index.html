@@ -447,22 +447,71 @@
                                 // For away team and location, we need to be smarter
                                 const afterScore = parts[1].trim();
                                 
-                                // Look for location patterns (containing "HC", "School", "Club", "Park", "Pitch")
-                                const locationMatch = afterScore.match(/(.+?)((?:[A-Za-z\s]+ HC|[A-Za-z\s]+ School|[A-Za-z\s]+ Club|[A-Za-z\s]+ Park)[^A-Za-z]*.*)/);
-                                if (locationMatch) {
-                                    fixture.AwayTeam = locationMatch[1].trim();
-                                    fixture.Location = locationMatch[2].trim();
-                                } else {
-                                    // Fallback: try to split by known patterns
-                                    const words = afterScore.split(/(?=[A-Z][a-z])/);
-                                    if (words.length >= 2) {
-                                        fixture.AwayTeam = words[0].trim();
-                                        fixture.Location = words.slice(1).join('').trim();
-                                    } else {
-                                        fixture.AwayTeam = afterScore;
-                                        fixture.Location = '';
+                                // Look for team name patterns:
+                                // - Chelmsford teams: end with number + optional (M)/(F) like "Chelmsford 5 (F)" or "Chelmsford 3"
+                                // - Other teams: may end with number like "Southend & Benfleet 3" or just name
+                                
+                                let awayTeam = '';
+                                let location = '';
+                                
+                                // Pattern 1: Look for Chelmsford teams (Chelmsford + number + optional (M/F))
+                                const chelmsfordMatch = afterScore.match(/^(.*?Chelmsford\s+\d+(?:\s*\([MF]\))?)(.*)/i);
+                                if (chelmsfordMatch) {
+                                    awayTeam = chelmsfordMatch[1].trim();
+                                    location = chelmsfordMatch[2].trim();
+                                }
+                                // Pattern 2: Look for other teams ending with numbers
+                                else {
+                                    // Try to find where the team name ends by looking for location keywords
+                                    const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
+                                    let bestSplit = -1;
+                                    
+                                    for (const keyword of locationKeywords) {
+                                        const keywordIndex = afterScore.indexOf(keyword);
+                                        if (keywordIndex > 0) {
+                                            // Find the start of the word containing this keyword
+                                            let wordStart = keywordIndex;
+                                            while (wordStart > 0 && afterScore[wordStart - 1] !== ' ') {
+                                                wordStart--;
+                                            }
+                                            
+                                            // Check if this makes sense as a team/location split
+                                            const potentialTeam = afterScore.substring(0, wordStart).trim();
+                                            if (potentialTeam.length > 2) {
+                                                bestSplit = wordStart;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (bestSplit > 0) {
+                                        awayTeam = afterScore.substring(0, bestSplit).trim();
+                                        location = afterScore.substring(bestSplit).trim();
+                                    }
+                                    // Fallback: Look for team names that end with numbers
+                                    else {
+                                        const teamNumberMatch = afterScore.match(/^(.*?\w+\s+\d+)(.*)$/);
+                                        if (teamNumberMatch) {
+                                            awayTeam = teamNumberMatch[1].trim();
+                                            location = teamNumberMatch[2].trim();
+                                        }
+                                        // Last resort: split roughly in the middle or use the whole thing as team
+                                        else {
+                                            const words = afterScore.split(' ');
+                                            if (words.length > 3) {
+                                                // Assume first few words are team name
+                                                awayTeam = words.slice(0, Math.ceil(words.length / 2)).join(' ');
+                                                location = words.slice(Math.ceil(words.length / 2)).join(' ');
+                                            } else {
+                                                awayTeam = afterScore;
+                                                location = '';
+                                            }
+                                        }
                                     }
                                 }
+                                
+                                fixture.AwayTeam = awayTeam;
+                                fixture.Location = location;
                             }
                         } else {
                             // No score found, treat as fixture (not result)
@@ -529,35 +578,78 @@
                             // Home team is after the date
                             fixture.HomeTeam = beforeScore.replace(currentMatch.date, '').trim();
                             
-                            // Away team and location parsing
+                            // Away team and location parsing with improved logic
                             const afterScoreTrimmed = afterScore.trim();
                             
-                            // Try to identify where team name ends and location begins
-                            const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre'];
-                            let splitPoint = -1;
+                            let awayTeam = '';
+                            let location = '';
                             
-                            for (const keyword of locationKeywords) {
-                                const keywordIndex = afterScoreTrimmed.indexOf(keyword);
-                                if (keywordIndex > 0) {
-                                    // Find the start of the word containing this keyword
-                                    let wordStart = keywordIndex;
-                                    while (wordStart > 0 && afterScoreTrimmed[wordStart - 1] !== ' ') {
-                                        wordStart--;
+                            // Pattern 1: Check for Chelmsford teams (Chelmsford + number + optional (M/F))
+                            const chelmsfordMatch = afterScoreTrimmed.match(/^(.*?Chelmsford\s+\d+(?:\s*\([MF]\))?)(.*)/i);
+                            if (chelmsfordMatch) {
+                                awayTeam = chelmsfordMatch[1].trim();
+                                location = chelmsfordMatch[2].trim();
+                            }
+                            // Pattern 2: Look for other teams that end with numbers
+                            else {
+                                // Try to identify where team name ends by looking for location keywords
+                                const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
+                                let bestSplit = -1;
+                                
+                                for (const keyword of locationKeywords) {
+                                    const keywordIndex = afterScoreTrimmed.indexOf(keyword);
+                                    if (keywordIndex > 0) {
+                                        // Find the start of the word containing this keyword
+                                        let wordStart = keywordIndex;
+                                        while (wordStart > 0 && afterScoreTrimmed[wordStart - 1] !== ' ') {
+                                            wordStart--;
+                                        }
+                                        
+                                        // Check if this makes sense as a team/location split
+                                        const potentialTeam = afterScoreTrimmed.substring(0, wordStart).trim();
+                                        if (potentialTeam.length > 2) {
+                                            bestSplit = wordStart;
+                                            break;
+                                        }
                                     }
-                                    splitPoint = wordStart;
-                                    break;
+                                }
+                                
+                                if (bestSplit > 0) {
+                                    awayTeam = afterScoreTrimmed.substring(0, bestSplit).trim();
+                                    location = afterScoreTrimmed.substring(bestSplit).trim();
+                                }
+                                // Pattern 3: Look for team names ending with numbers (like "Southend & Benfleet 3")
+                                else {
+                                    const teamNumberMatch = afterScoreTrimmed.match(/^(.*?\b\w+\s+\d+)(.*)$/);
+                                    if (teamNumberMatch) {
+                                        awayTeam = teamNumberMatch[1].trim();
+                                        location = teamNumberMatch[2].trim();
+                                    }
+                                    // Pattern 4: Look for team names ending with "Development", "Evergreens", etc.
+                                    else {
+                                        const teamSuffixMatch = afterScoreTrimmed.match(/^(.*?\b(?:Development|Evergreens|Centurions)\b)(.*)$/i);
+                                        if (teamSuffixMatch) {
+                                            awayTeam = teamSuffixMatch[1].trim();
+                                            location = teamSuffixMatch[2].trim();
+                                        }
+                                        // Last resort: assume first reasonable chunk is team name
+                                        else {
+                                            const words = afterScoreTrimmed.split(' ');
+                                            if (words.length > 4) {
+                                                // Take first 3-4 words as team name
+                                                awayTeam = words.slice(0, 3).join(' ');
+                                                location = words.slice(3).join(' ');
+                                            } else {
+                                                awayTeam = afterScoreTrimmed;
+                                                location = '';
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             
-                            if (splitPoint > 0) {
-                                fixture.AwayTeam = afterScoreTrimmed.substring(0, splitPoint).trim();
-                                fixture.Location = afterScoreTrimmed.substring(splitPoint).trim();
-                            } else {
-                                // Fallback: assume first part is team name
-                                const parts = afterScoreTrimmed.split(/(?=[A-Z])/);
-                                fixture.AwayTeam = parts[0] || afterScoreTrimmed;
-                                fixture.Location = parts.slice(1).join('') || '';
-                            }
+                            fixture.AwayTeam = awayTeam;
+                            fixture.Location = location;
                         }
                         
                         fixtures.push(fixture);

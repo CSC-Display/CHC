@@ -1,222 +1,92 @@
-#!/usr/bin/env python3
-"""
-Sports Fixture Data to CSV Importer - GitHub Actions Version
+# GitHub Actions Workflow to fetch sports fixture data and update CSV
+name: Update Sports Fixture Data
 
-This script extracts fixture/match data from sports APIs and exports to CSV.
-Optimized for running in GitHub Actions with environment variables.
-"""
+on:
+  # Run automatically every day at 6 AM UTC
+  schedule:
+    - cron: '0 6 * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+  
+  # Run on push to main branch
+  push:
+    branches: [ main ]
 
-import csv
-import json
-import requests
-import os
-from datetime import datetime
-from typing import List, Dict, Any, Optional
-import logging
-import sys
-
-# Set up logging for GitHub Actions
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
-
-class SportsFixtureImporter:
-    def __init__(self, output_dir: str = 'data'):
-        # Create data directory if it doesn't exist
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Use timestamp in filename for GitHub Actions
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        self.output_file = os.path.join(output_dir, f'fixture_data_{timestamp}.csv')
-        self.latest_file = os.path.join(output_dir, 'latest_fixtures.csv')
-        
-        self.fixture_data = []
-        self.base_url = "https://gmsfeed.co.uk/api/"
+jobs:
+  update-fixture-data:
+    runs-on: ubuntu-latest
     
-    def get_club_fixtures(self, club_id: str, sort_by: str = "fixtureTime", 
-                         show: str = "results", method: str = "api") -> None:
-        """Get fixture data for a specific club"""
-        try:
-            # Get club ID from environment variable if not provided
-            if not club_id:
-                club_id = os.getenv('CLUB_ID', 'e9ba26d3-7e18-4772-abb0-584e887c9d38')
-            
-            logger.info(f"Fetching fixture data for club ID: {club_id}")
-            
-            # Try different API endpoints
-            endpoints_to_try = [
-                f"fixtures?club_id={club_id}&sort_by={sort_by}&show={show}",
-                f"club/{club_id}/fixtures",
-                f"v1/fixtures/{club_id}",
-            ]
-            
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (compatible; GitHubActions/1.0)',
-                'Accept': 'application/json, text/html, */*',
-                'Accept-Language': 'en-US,en;q=0.9'
-            }
-            
-            # Add API key if available
-            api_key = os.getenv('API_KEY') or os.getenv('SPORTS_API_KEY')
-            if api_key:
-                headers['Authorization'] = f'Bearer {api_key}'
-                headers['X-API-Key'] = api_key
-            
-            success = False
-            for endpoint in endpoints_to_try:
-                try:
-                    url = f"{self.base_url}{endpoint}"
-                    logger.info(f"Trying endpoint: {url}")
-                    
-                    response = requests.get(url, headers=headers, timeout=30)
-                    
-                    if response.status_code == 200:
-                        try:
-                            data = response.json()
-                            self._process_fixture_data(data)
-                            success = True
-                            logger.info(f"Successfully fetched data from: {endpoint}")
-                            break
-                        except json.JSONDecodeError:
-                            logger.info(f"Endpoint returned non-JSON data: {endpoint}")
-                            continue
-                    else:
-                        logger.warning(f"Endpoint returned status {response.status_code}: {endpoint}")
-                        continue
-                        
-                except requests.exceptions.RequestException as e:
-                    logger.warning(f"Request failed for endpoint {endpoint}: {e}")
-                    continue
-            
-            if not success:
-                logger.warning("All API endpoints failed, using sample data")
-                self.add_sample_data()
-                
-        except Exception as e:
-            logger.error(f"Error fetching fixture data: {e}")
-            logger.info("Falling back to sample data")
-            self.add_sample_data()
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        # Fetch full history for proper git operations
+        fetch-depth: 0
     
-    def _process_fixture_data(self, data: Any) -> None:
-        """Process the fixture data from API response"""
-        if isinstance(data, list):
-            self.fixture_data = data
-        elif isinstance(data, dict):
-            possible_keys = ['fixtures', 'results', 'matches', 'data', 'items', 'games']
-            for key in possible_keys:
-                if key in data and isinstance(data[key], list):
-                    self.fixture_data = data[key]
-                    logger.info(f"Found fixture data in '{key}' field")
-                    break
-            else:
-                self.fixture_data = [data]
-        
-        logger.info(f"Processed {len(self.fixture_data)} fixture records")
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
     
-    def add_sample_data(self) -> None:
-        """Add sample fixture data"""
-        sample_fixtures = [
-            {
-                'fixture_id': f'FIX{datetime.now().strftime("%Y%m%d")}001',
-                'date': datetime.now().strftime('%Y-%m-%d'),
-                'time': '15:00',
-                'home_team': 'Home Team FC',
-                'away_team': 'Away Team United',
-                'home_score': 2,
-                'away_score': 1,
-                'competition': 'League Championship',
-                'status': 'Full Time',
-                'venue': 'Home Stadium',
-                'attendance': 45000,
-                'data_source': 'sample_data',
-                'last_updated': datetime.now().isoformat()
-            }
-        ]
-        
-        self.fixture_data.extend(sample_fixtures)
-        logger.info(f"Added {len(sample_fixtures)} sample fixtures")
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 lxml
+        # Install any additional requirements if you have a requirements.txt
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     
-    def export_to_csv(self) -> None:
-        """Export fixture data to CSV files"""
-        if not self.fixture_data:
-            logger.error("No fixture data to export")
-            return
-        
-        try:
-            # Get all field names
-            all_fields = set()
-            for fixture in self.fixture_data:
-                if isinstance(fixture, dict):
-                    all_fields.update(fixture.keys())
-            
-            fieldnames = sorted(list(all_fields))
-            
-            # Export to timestamped file
-            self._write_csv_file(self.output_file, fieldnames)
-            
-            # Export to latest file (for easy access)
-            self._write_csv_file(self.latest_file, fieldnames)
-            
-            logger.info(f"Exported {len(self.fixture_data)} fixtures to CSV files")
-            
-            # GitHub Actions output
-            if os.getenv('GITHUB_ACTIONS'):
-                print(f"::set-output name=csv_file::{self.output_file}")
-                print(f"::set-output name=record_count::{len(self.fixture_data)}")
-            
-        except Exception as e:
-            logger.error(f"Error exporting to CSV: {e}")
-            raise
+    - name: Run fixture data import
+      id: import-data
+      env:
+        # Add any API keys as GitHub secrets
+        API_KEY: ${{ secrets.SPORTS_API_KEY }}
+        CLUB_ID: "e9ba26d3-7e18-4772-abb0-584e887c9d38"
+      run: |
+        python sports_fixture_importer.py
     
-    def _write_csv_file(self, filename: str, fieldnames: List[str]) -> None:
-        """Write data to a specific CSV file"""
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            
-            for fixture in self.fixture_data:
-                if isinstance(fixture, dict):
-                    writer.writerow(fixture)
-        
-        logger.info(f"Written data to: {filename}")
-
-def main():
-    """Main function for GitHub Actions"""
-    logger.info("Starting Sports Fixture Data Import")
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
     
-    # Get configuration from environment
-    club_id = os.getenv('CLUB_ID', 'e9ba26d3-7e18-4772-abb0-584e887c9d38')
-    output_dir = os.getenv('OUTPUT_DIR', 'data')
+    - name: Commit and push changes
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/*.csv *.csv
+        git commit -m "Update fixture data - $(date '+%Y-%m-%d %H:%M:%S') [skip ci]"
+        git push
     
-    # Initialize importer
-    importer = SportsFixtureImporter(output_dir)
+    - name: Upload CSV as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fixture-data-csv-${{ github.run_number }}
+        path: |
+          data/*.csv
+          *.csv
+        retention-days: 30
+        if-no-files-found: warn
     
-    # Fetch data
-    importer.get_club_fixtures(club_id)
-    
-    # Export to CSV
-    importer.export_to_csv()
-    
-    # Print summary for GitHub Actions
-    summary = {
-        "total_fixtures": len(importer.fixture_data),
-        "output_files": [importer.output_file, importer.latest_file],
-        "timestamp": datetime.now().isoformat()
-    }
-    
-    logger.info(f"Import completed: {json.dumps(summary, indent=2)}")
-    
-    # GitHub Actions summary
-    if os.getenv('GITHUB_ACTIONS'):
-        print(f"\n## 📊 Fixture Data Import Summary")
-        print(f"- **Records processed:** {summary['total_fixtures']}")
-        print(f"- **Files created:** {len(summary['output_files'])}")
-        print(f"- **Timestamp:** {summary['timestamp']}")
-
-if __name__ == "__main__":
-    main()
+    - name: Create release with data
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: data-update-${{ github.run_number }}
+        name: Fixture Data Update ${{ github.run_number }}
+        body: |
+          Automated fixture data update
+          - Updated: $(date '+%Y-%m-%d %H:%M:%S')
+          - Workflow run: ${{ github.run_number }}
+        draft: false
+        prerelease: false
+        files: |
+          data/*.csv
+          *.csv

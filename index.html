@@ -641,7 +641,7 @@
             return data;
         }
 
-        // Display data in preview table (without FixtureText column)
+        // Display data in preview table (with specific column order)
         function displayData(data) {
             if (data.length === 0) {
                 showStatus('No data found to display', 'error');
@@ -656,17 +656,29 @@
             header.innerHTML = '';
             body.innerHTML = '';
             
-            // Get all unique keys from the data, but exclude unwanted columns
+            // Define the desired column order
+            const desiredOrder = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
+            
+            // Get all available keys from the data, excluding unwanted ones
             const allKeys = new Set();
             data.forEach(row => {
                 Object.keys(row).forEach(key => {
-                    // Skip columns we don't want to display
                     if (!['FixtureText', 'OriginalText', 'FixtureNumber'].includes(key)) {
                         allKeys.add(key);
                     }
                 });
             });
-            const keys = Array.from(allKeys);
+            
+            // Create ordered keys list - desired order first, then any extras
+            const keys = [];
+            desiredOrder.forEach(key => {
+                if (allKeys.has(key)) {
+                    keys.push(key);
+                    allKeys.delete(key);
+                }
+            });
+            // Add any remaining keys that weren't in our desired order
+            keys.push(...Array.from(allKeys));
             
             // Create header
             const headerRow = document.createElement('tr');
@@ -692,21 +704,33 @@
             showStatus(`Successfully loaded ${data.length} records`, 'success');
         }
 
-        // Convert data to CSV (without unwanted columns)
+        // Convert data to CSV (with specific column order)
         function convertToCSV(data) {
             if (data.length === 0) return '';
             
-            // Get all unique keys but exclude unwanted columns
+            // Define the desired column order
+            const desiredOrder = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
+            
+            // Get all available keys from the data, excluding unwanted ones
             const allKeys = new Set();
             data.forEach(row => {
                 Object.keys(row).forEach(key => {
-                    // Skip columns we don't want in the CSV
                     if (!['FixtureText', 'OriginalText', 'FixtureNumber'].includes(key)) {
                         allKeys.add(key);
                     }
                 });
             });
-            const keys = Array.from(allKeys);
+            
+            // Create ordered keys list - desired order first, then any extras
+            const keys = [];
+            desiredOrder.forEach(key => {
+                if (allKeys.has(key)) {
+                    keys.push(key);
+                    allKeys.delete(key);
+                }
+            });
+            // Add any remaining keys that weren't in our desired order
+            keys.push(...Array.from(allKeys));
             
             // Create CSV header
             let csv = keys.map(key => `"${key}"`).join(',') + '\n';

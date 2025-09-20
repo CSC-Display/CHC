@@ -1,0 +1,85 @@
+# GitHub Actions Workflow to fetch sports fixture data and update CSV
+name: Update Sports Fixture Data
+
+on:
+  # Run automatically every day at 6 AM UTC
+  schedule:
+    - cron: '0 6 * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+  
+  # Run on push to main branch
+  push:
+    branches: [ main ]
+
+jobs:
+  update-fixture-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        # Fetch full history for proper git operations
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 lxml
+        # Install any additional requirements if you have a requirements.txt
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Run fixture data import
+      env:
+        # Add any API keys as GitHub secrets
+        API_KEY: ${{ secrets.SPORTS_API_KEY }}
+        CLUB_ID: "e9ba26d3-7e18-4772-abb0-584e887c9d38"
+      run: |
+        python sports_fixture_importer.py
+    
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Commit and push changes
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add *.csv
+        git commit -m "Update fixture data - $(date '+%Y-%m-%d %H:%M:%S')"
+        git push
+    
+    - name: Upload CSV as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: fixture-data-csv
+        path: "*.csv"
+        retention-days: 30
+    
+    - name: Create release with data
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: data-update-${{ github.run_number }}
+        release_name: Fixture Data Update ${{ github.run_number }}
+        body: |
+          Automated fixture data update
+          - Updated: $(date '+%Y-%m-%d %H:%M:%S')
+          - Workflow run: ${{ github.run_number }}
+        draft: false
+        prerelease: false

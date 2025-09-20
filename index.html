@@ -367,8 +367,8 @@
             console.log('Parsing away team/location from:', text);
             
             try {
-                // Check for Chelmsford home games first
-                const chelmsfordHomePattern = /^(.+?)(ChelmsfordHC\s*-\s*Chelmer\s*Park\s*-\s*Pitch\s*\d)$/i;
+                // Check for Chelmsford home games first (most specific pattern)
+                const chelmsfordHomePattern = /^(.+?)(Chelmsford\s*HC\s*[-\s]*Chelmer\s*Park\s*[-\s]*Pitch\s*\d)$/i;
                 const chelmsfordHomeMatch = text.match(chelmsfordHomePattern);
                 
                 if (chelmsfordHomeMatch) {
@@ -376,6 +376,47 @@
                     return {
                         awayTeam: chelmsfordHomeMatch[1].trim(),
                         location: chelmsfordHomeMatch[2].trim()
+                    };
+                }
+                
+                // Alternative Chelmsford home pattern (in case spacing is different)
+                const chelmsfordHomePattern2 = /^(.+?)Chelmsford\s*HC(.*)$/i;
+                const chelmsfordHomeMatch2 = text.match(chelmsfordHomePattern2);
+                
+                if (chelmsfordHomeMatch2) {
+                    console.log('Alternative Chelmsford home pattern detected');
+                    const awayTeam = chelmsfordHomeMatch2[1].trim();
+                    const locationPart = chelmsfordHomeMatch2[2].trim();
+                    
+                    // Reconstruct the full location
+                    let location = 'Chelmsford HC' + (locationPart ? ' ' + locationPart : '');
+                    
+                    return {
+                        awayTeam: awayTeam,
+                        location: location
+                    };
+                }
+                
+                // Check for other specific venue patterns
+                const walthamForestPattern = /^(.+?)(Waltham\s*Forest\s*Hockey\s*Club.*)$/i;
+                const walthamMatch = text.match(walthamForestPattern);
+                
+                if (walthamMatch) {
+                    console.log('Waltham Forest venue detected');
+                    return {
+                        awayTeam: walthamMatch[1].trim(),
+                        location: walthamMatch[2].trim()
+                    };
+                }
+                
+                const becketKeysPattern = /^(.+?)(Becket\s*Keys\s*School.*)$/i;
+                const becketMatch = text.match(becketKeysPattern);
+                
+                if (becketMatch) {
+                    console.log('Becket Keys School detected');
+                    return {
+                        awayTeam: becketMatch[1].trim(),
+                        location: becketMatch[2].trim()
                     };
                 }
                 
@@ -391,39 +432,27 @@
                     };
                 }
                 
-                // Look for location keywords to split
-                const locationKeywords = ['HC', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground'];
-                
-                for (const keyword of locationKeywords) {
-                    const keywordIndex = text.indexOf(keyword);
-                    if (keywordIndex > 0) {
-                        // Find start of word containing this keyword
-                        let wordStart = keywordIndex;
-                        while (wordStart > 0 && text[wordStart - 1] !== ' ') {
-                            wordStart--;
-                        }
-                        
-                        const potentialTeam = text.substring(0, wordStart).trim();
-                        if (potentialTeam.length > 2) {
-                            console.log('Split by location keyword:', keyword);
-                            return {
-                                awayTeam: potentialTeam,
-                                location: text.substring(wordStart).trim()
-                            };
-                        }
-                    }
-                }
-                
-                // Look for teams ending with single digits
-                const teamNumberPattern = /^(.*?\b\w+\s+\d)(.*)$/;
+                // Look for teams ending with single digits followed by location
+                const teamNumberPattern = /^(.*?\b\w+\s+\d)(.+)$/;
                 const teamNumberMatch = text.match(teamNumberPattern);
                 
                 if (teamNumberMatch) {
-                    console.log('Team with number detected');
-                    return {
-                        awayTeam: teamNumberMatch[1].trim(),
-                        location: teamNumberMatch[2].trim()
-                    };
+                    const potentialTeam = teamNumberMatch[1].trim();
+                    const potentialLocation = teamNumberMatch[2].trim();
+                    
+                    // Check if the location part looks like a venue
+                    if (potentialLocation.length > 5 && 
+                        (potentialLocation.includes('HC') || 
+                         potentialLocation.includes('School') || 
+                         potentialLocation.includes('Club') ||
+                         potentialLocation.includes('Park') ||
+                         potentialLocation.includes('Pitch'))) {
+                        console.log('Team with number and venue detected');
+                        return {
+                            awayTeam: potentialTeam,
+                            location: potentialLocation
+                        };
+                    }
                 }
                 
                 // Look for special team suffixes
@@ -438,15 +467,29 @@
                     };
                 }
                 
-                // Fallback: split roughly in middle
-                const words = text.split(' ');
-                if (words.length > 4) {
-                    const midPoint = Math.ceil(words.length / 2);
-                    console.log('Using fallback split');
-                    return {
-                        awayTeam: words.slice(0, midPoint).join(' '),
-                        location: words.slice(midPoint).join(' ')
-                    };
+                // Fallback: look for any location-like words
+                const locationWords = ['Hockey', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground', 'HC'];
+                
+                for (const word of locationWords) {
+                    const wordIndex = text.indexOf(word);
+                    if (wordIndex > 3) { // Make sure there's some team name before it
+                        // Find the start of the word that contains this location indicator
+                        let wordStart = wordIndex;
+                        while (wordStart > 0 && text[wordStart - 1] !== ' ') {
+                            wordStart--;
+                        }
+                        
+                        const potentialTeam = text.substring(0, wordStart).trim();
+                        const potentialLocation = text.substring(wordStart).trim();
+                        
+                        if (potentialTeam.length > 2 && potentialLocation.length > 2) {
+                            console.log('Split by location word:', word);
+                            return {
+                                awayTeam: potentialTeam,
+                                location: potentialLocation
+                            };
+                        }
+                    }
                 }
                 
                 // Last resort: everything is away team

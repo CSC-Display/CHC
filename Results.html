@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Club Data Scraper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #1e7e34;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        #status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .data-preview {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .gms-wrapper {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sports Club Fixtures & Results to CSV</h1>
+        
+        <div class="controls">
+            <button id="loadData" class="btn-primary">Load Sports Data</button>
+            <button id="exportCSV" class="btn-success" disabled>Export to CSV</button>
+            <button id="clearData" class="btn-secondary">Clear Data</button>
+        </div>
+        
+        <div id="status" class="hidden"></div>
+        
+        <!-- Original GMS wrapper -->
+        <div class="gms-wrapper gms-ajax" 
+             data-method="api" 
+             data-show="results" 
+             data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
+             data-whatson="7" 
+             data-sort_by="fixtureTime" 
+             data-options="showGender:yes,showList:yes"
+             data-css="no">
+            <div class="loading">Loading sports data...</div>
+        </div>
+        
+        <div id="dataPreview" class="data-preview hidden">
+            <table id="dataTable">
+                <thead id="tableHeader"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://gmsfeed.co.uk/js/api.js"></script>
+    <script>
+        let sportsData = [];
+        let dataLoaded = false;
+
+        // Status display function
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status-${type}`;
+            statusEl.classList.remove('hidden');
+        }
+
+        // Wait for GMS data to load and extract it
+        function extractSportsData() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 20; // Wait up to 10 seconds
+                
+                function checkForData() {
+                    attempts++;
+                    
+                    // Look for the loaded data in various ways
+                    const gmsWrapper = document.querySelector('.gms-wrapper');
+                    
+                    // Check if data has been populated
+                    const tables = gmsWrapper.querySelectorAll('table');
+                    const rows = gmsWrapper.querySelectorAll('tr');
+                    const dataElements = gmsWrapper.querySelectorAll('[data-fixture], [data-result]');
+                    
+                    if (tables.length > 0 || rows.length > 1 || dataElements.length > 0) {
+                        try {
+                            const extractedData = parseGMSData(gmsWrapper);
+                            if (extractedData.length > 0) {
+                                resolve(extractedData);
+                                return;
+                            }
+                        } catch (error) {
+                            console.log('Error parsing data:', error);
+                        }
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        reject(new Error('Timeout waiting for sports data to load'));
+                        return;
+                    }
+                    
+                    // Try again after 500ms
+                    setTimeout(checkForData, 500);
+                }
+                
+                // Start checking immediately
+                checkForData();
+            });
+        }
+
+        // Parse the loaded GMS data
+        function parseGMSData(container) {
+            const data = [];
+            
+            // Try different approaches to extract data
+            
+            // Approach 1: Look for table data
+            const table = container.querySelector('table');
+            if (table) {
+                const rows = table.querySelectorAll('tr');
+                const headers = [];
+                
+                // Get headers
+                const headerRow = rows[0];
+                if (headerRow) {
+                    headerRow.querySelectorAll('th, td').forEach(cell => {
+                        headers.push(cell.textContent.trim());
+                    });
+                }
+                
+                // Get data rows
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const rowData = {};
+                    const cells = row.querySelectorAll('td');
+                    
+                    cells.forEach((cell, index) => {
+                        const header = headers[index] || `Column${index + 1}`;
+                        rowData[header] = cell.textContent.trim();
+                    });
+                    
+                    if (Object.keys(rowData).length > 0) {
+                        data.push(rowData);
+                    }
+                }
+            }
+            
+            // Approach 2: Look for structured divs/spans with data
+            if (data.length === 0) {
+                const items = container.querySelectorAll('[class*="fixture"], [class*="result"], [class*="match"]');
+                items.forEach((item, index) => {
+                    const rowData = {
+                        Item: index + 1,
+                        Content: item.textContent.trim(),
+                        HTML: item.innerHTML
+                    };
+                    
+                    // Look for specific data attributes or classes
+                    const dateEl = item.querySelector('[class*="date"], [class*="time"]');
+                    const teamEl = item.querySelectorAll('[class*="team"]');
+                    const scoreEl = item.querySelector('[class*="score"], [class*="result"]');
+                    
+                    if (dateEl) rowData.Date = dateEl.textContent.trim();
+                    if (teamEl.length >= 2) {
+                        rowData.HomeTeam = teamEl[0].textContent.trim();
+                        rowData.AwayTeam = teamEl[1].textContent.trim();
+                    }
+                    if (scoreEl) rowData.Score = scoreEl.textContent.trim();
+                    
+                    data.push(rowData);
+                });
+            }
+            
+            // Approach 3: If no structured data found, extract all text content
+            if (data.length === 0) {
+                const textContent = container.textContent.trim();
+                if (textContent && textContent !== 'Loading sports data...') {
+                    // Split by lines and create basic structure
+                    const lines = textContent.split('\n').filter(line => line.trim());
+                    lines.forEach((line, index) => {
+                        if (line.trim()) {
+                            data.push({
+                                LineNumber: index + 1,
+                                Content: line.trim()
+                            });
+                        }
+                    });
+                }
+            }
+            
+            return data;
+        }
+
+        // Display data in preview table
+        function displayData(data) {
+            if (data.length === 0) {
+                showStatus('No data found to display', 'error');
+                return;
+            }
+            
+            const preview = document.getElementById('dataPreview');
+            const header = document.getElementById('tableHeader');
+            const body = document.getElementById('tableBody');
+            
+            // Clear existing content
+            header.innerHTML = '';
+            body.innerHTML = '';
+            
+            // Get all unique keys from the data
+            const allKeys = new Set();
+            data.forEach(row => {
+                Object.keys(row).forEach(key => allKeys.add(key));
+            });
+            const keys = Array.from(allKeys);
+            
+            // Create header
+            const headerRow = document.createElement('tr');
+            keys.forEach(key => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            header.appendChild(headerRow);
+            
+            // Create data rows
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                keys.forEach(key => {
+                    const td = document.createElement('td');
+                    td.textContent = row[key] || '';
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+            
+            preview.classList.remove('hidden');
+            showStatus(`Successfully loaded ${data.length} records`, 'success');
+        }
+
+        // Convert data to CSV
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            // Get all unique keys
+            const allKeys = new Set();
+            data.forEach(row => {
+                Object.keys(row).forEach(key => allKeys.add(key));
+            });
+            const keys = Array.from(allKeys);
+            
+            // Create CSV header
+            let csv = keys.map(key => `"${key}"`).join(',') + '\n';
+            
+            // Add data rows
+            data.forEach(row => {
+                const values = keys.map(key => {
+                    const value = row[key] || '';
+                    // Escape quotes and wrap in quotes
+                    return `"${String(value).replace(/"/g, '""')}"`;
+                });
+                csv += values.join(',') + '\n';
+            });
+            
+            return csv;
+        }
+
+        // Download CSV file
+        function downloadCSV(csvContent, filename = 'sports_data.csv') {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('loadData').addEventListener('click', async () => {
+            showStatus('Loading sports data...', 'info');
+            document.getElementById('exportCSV').disabled = true;
+            
+            try {
+                sportsData = await extractSportsData();
+                displayData(sportsData);
+                document.getElementById('exportCSV').disabled = false;
+                dataLoaded = true;
+            } catch (error) {
+                showStatus(`Error loading data: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('exportCSV').addEventListener('click', () => {
+            if (sportsData.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+            
+            const csv = convertToCSV(sportsData);
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+            downloadCSV(csv, `sports_club_data_${timestamp}.csv`);
+            showStatus('CSV file downloaded successfully', 'success');
+        });
+
+        document.getElementById('clearData').addEventListener('click', () => {
+            sportsData = [];
+            document.getElementById('dataPreview').classList.add('hidden');
+            document.getElementById('status').classList.add('hidden');
+            document.getElementById('exportCSV').disabled = true;
+            dataLoaded = false;
+            
+            // Reset the GMS wrapper
+            const gmsWrapper = document.querySelector('.gms-wrapper');
+            gmsWrapper.innerHTML = '<div class="loading">Loading sports data...</div>';
+        });
+
+        // Auto-load data when page loads
+        window.addEventListener('load', () => {
+            // Give the GMS API time to load
+            setTimeout(() => {
+                document.getElementById('loadData').click();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

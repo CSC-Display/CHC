@@ -354,15 +354,21 @@
                 return;
             }
 
-            // Create CSV content
-            const headers = ['Date', 'Home Team', 'Score', 'Away Team', 'Venue', 'Notes'];
+            // Create CSV content with individual columns for each field
+            const headers = ['Date', 'Home Team', 'Home Score', 'Away Score', 'Away Team', 'Venue', 'Notes'];
             let csvContent = headers.join(',') + '\n';
 
             processedMatches.forEach(match => {
+                // Split the score into home and away scores
+                const scoreParts = match.score.split(':');
+                const homeScore = scoreParts[0] || '';
+                const awayScore = scoreParts[1] || '';
+
                 const row = [
                     `"${match.date}"`,
                     `"${match.homeTeam}"`,
-                    `"${match.score}"`,
+                    `"${homeScore}"`,
+                    `"${awayScore}"`,
                     `"${match.awayTeam}"`,
                     `"${match.venue}"`,
                     `"${match.notes}"`

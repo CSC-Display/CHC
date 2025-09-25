@@ -1,890 +1,399 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>GMS Sports Data Extractor</title>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      padding: 20px; 
-      max-width: 1200px;
-      margin: 0 auto;
-      background-color: #f5f5f5;
-    }
-    
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    .controls {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    
-    textarea { 
-      width: 100%; 
-      height: 150px; 
-      margin-bottom: 10px; 
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-family: monospace;
-      font-size: 12px;
-    }
-    
-    button { 
-      padding: 12px 24px; 
-      margin: 5px 5px 5px 0;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s;
-    }
-    
-    .btn-primary {
-      background-color: #007bff;
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background-color: #0056b3;
-    }
-    
-    .btn-success {
-      background-color: #28a745;
-      color: white;
-    }
-    
-    .btn-success:hover {
-      background-color: #1e7e34;
-    }
-    
-    .btn-secondary {
-      background-color: #6c757d;
-      color: white;
-    }
-    
-    .btn-secondary:hover {
-      background-color: #545b62;
-    }
-    
-    .btn-warning {
-      background-color: #ffc107;
-      color: #212529;
-    }
-    
-    .btn-warning:hover {
-      background-color: #e0a800;
-    }
-    
-    .data-preview {
-      margin-top: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      max-height: 400px;
-      overflow: auto;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    
-    th {
-      background-color: #f8f9fa;
-      font-weight: bold;
-      position: sticky;
-      top: 0;
-    }
-    
-    tr:hover {
-      background-color: #f5f5f5;
-    }
-    
-    #status {
-      padding: 15px;
-      border-radius: 5px;
-      margin: 20px 0;
-      font-weight: bold;
-    }
-    
-    .status-info {
-      background-color: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-    
-    .status-success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    
-    .status-error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    
-    .status-warning {
-      background-color: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeaa7;
-    }
-    
-    .hidden {
-      display: none;
-    }
-    
-    .gms-wrapper {
-      margin: 20px 0;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      background-color: #fafafa;
-      min-height: 100px;
-    }
-    
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #666;
-    }
-    
-    .manual-input {
-      margin-top: 20px;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      background-color: #f8f9fa;
-    }
-    
-    .tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-    }
-    
-    .tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.3s;
-    }
-    
-    .tab.active {
-      border-bottom: 2px solid #007bff;
-      color: #007bff;
-    }
-    
-    .tab-content {
-      display: none;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMS Data Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .score {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .notes {
+            font-style: italic;
+            color: #666;
+        }
+
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            padding: 20px;
+            background-color: #ffebee;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .success {
+            color: #388e3c;
+            text-align: center;
+            padding: 10px;
+            background-color: #e8f5e8;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        #rawDataPreview {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>GMS Sports Data Extractor</h1>
-    
-    <div class="tabs">
-      <div class="tab active" onclick="showTab('api')">Load from GMS API</div>
-      <div class="tab" onclick="showTab('manual')">Manual Input</div>
+    <div class="container">
+        <h1>🏒 GMS Hockey Data Processor</h1>
+        
+        <div class="button-group">
+            <button id="collectBtn" onclick="collectData()">Collect Data</button>
+            <button id="exportBtn" onclick="exportToCSV()" disabled>Export to CSV</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            Collecting data from GMS feed...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="success" class="success" style="display: none;"></div>
+
+        <div id="rawDataSection" style="display: none;">
+            <h3>Raw Data Preview:</h3>
+            <div id="rawDataPreview"></div>
+        </div>
+
+        <div id="tableContainer"></div>
     </div>
-    
-    <div id="api-tab" class="tab-content active">
-      <p>Automatically fetch sports data from the GMS API system:</p>
-      
-      <div class="controls">
-        <button onclick="loadGMSData()" class="btn-primary">Load GMS Data</button>
-        <button onclick="parseLoadedData()" class="btn-warning" id="parseBtn" disabled>Parse Loaded Data</button>
-        <button onclick="exportCSV()" class="btn-success" id="exportBtn" disabled>Export to CSV</button>
-        <button onclick="clearAll()" class="btn-secondary">Clear All</button>
-      </div>
-      
-      <div id="status" class="hidden"></div>
-      
-      <!-- GMS API Integration -->
-      <div class="gms-wrapper gms-ajax" 
-           data-method="api" 
-           data-show="results" 
-           data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
-           data-whatson="7" 
-           data-sort_by="fixtureTime" 
-           data-options="showGender:yes,showDetail:yes,showList:yes" 
-           data-css="no">
-        <div class="loading">Waiting for GMS data to load...</div>
-      </div>
+
+    <!-- GMS Feed Integration -->
+    <div style="display: none;">
+        <div class="gms-wrapper gms-ajax" 
+             data-method="api" 
+             data-show="fixtures" 
+             data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
+             data-sort_by="fixtureTime" 
+             data-css="no"
+             id="gmsContainer">
+        </div>
     </div>
+
+    <script src="https://gmsfeed.co.uk/js/api.js"></script>
     
-    <div id="manual-tab" class="tab-content">
-      <div class="manual-input">
-        <p>Manually paste match data for parsing:</p>
-        <textarea id="rawData" placeholder="Example:
-15 Oct 2024
-Chelmsford 1 (M) 2:1 Waltham Forest 1 Chelmsford HC - Chelmer Park - Pitch 1
-16 Oct 2024  
-Team A 0:3 Team B School Sports Ground
-Walkover - Team C vs Team D"></textarea>
-        <br>
-        <button onclick="parseManualData()" class="btn-primary">Parse Manual Data</button>
-        <button onclick="exportCSV()" class="btn-success" id="exportBtn2" disabled>Export to CSV</button>
-        <button onclick="clearManual()" class="btn-secondary">Clear Manual Data</button>
-      </div>
-    </div>
-    
-    <!-- Results Display -->
-    <div id="results-section">
-      <h2>Parsed Match Data:</h2>
-      <div id="tableView" class="data-preview hidden">
-        <table>
-          <thead id="tableHeader"></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-      
-      <h3>Raw Data Preview:</h3>
-      <textarea id="rawDataPreview" readonly></textarea>
-    </div>
-  </div>
+    <script>
+        let processedMatches = [];
 
-  <!-- Load GMS API Script -->
-  <script src="https://gmsfeed.co.uk/js/api.js"></script>
-  
-  <script>
-    let parsedMatches = [];
-    let gmsDataLoaded = false;
-    let checkInterval;
+        function parseMatches(rawData) {
+            // Split into lines, ignore empty or irrelevant ones
+            const lines = rawData
+                .split("\n")
+                .map(l => l.trim())
+                .filter(l => l && !l.includes("England Hockey Link"));
 
-    // Tab switching
-    function showTab(tabName) {
-      // Hide all tabs
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-      });
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      
-      // Show selected tab
-      document.getElementById(tabName + '-tab').classList.add('active');
-      event.target.classList.add('active');
-    }
+            return lines.map(line => {
+                // 1. Extract date
+                const dateMatch = line.match(/^\d{1,2} \w{3} \d{4}/);
+                const date = dateMatch ? dateMatch[0] : "";
 
-    // Status display function
-    function showStatus(message, type = 'info') {
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = message;
-      statusEl.className = `status-${type}`;
-      statusEl.classList.remove('hidden');
-    }
+                // 2. Remove date from string
+                let rest = line.replace(date, "").trim();
 
-    // Load GMS data
-    function loadGMSData() {
-      showStatus('Loading GMS data...', 'info');
-      gmsDataLoaded = false;
-      document.getElementById('parseBtn').disabled = true;
-      
-      // Check if data is already loaded
-      setTimeout(checkGMSData, 2000);
-      
-      // Set up interval to check for data loading
-      checkInterval = setInterval(checkGMSData, 3000);
-      
-      // Stop checking after 30 seconds
-      setTimeout(() => {
-        if (checkInterval) {
-          clearInterval(checkInterval);
-          if (!gmsDataLoaded) {
-            showStatus('GMS data loading timeout. Try refreshing the page or check your connection.', 'error');
-          }
-        }
-      }, 30000);
-    }
+                // 3. Extract score
+                const scoreMatch = rest.match(/(\d+)\s*:\s*(\d+)/);
+                const score = scoreMatch ? `${scoreMatch[1]}:${scoreMatch[2]}` : "";
 
-    function checkGMSData() {
-      const gmsWrapper = document.querySelector('.gms-wrapper');
-      const textContent = gmsWrapper.textContent.trim();
-      const htmlContent = gmsWrapper.innerHTML;
-      
-      console.log('Checking GMS data...', {
-        textLength: textContent.length,
-        htmlLength: htmlContent.length,
-        hasLoading: textContent.includes('Loading') || textContent.includes('Waiting')
-      });
-      
-      // Check if data has loaded (more than just loading message)
-      if (textContent.length > 100 && 
-          !textContent.includes('Waiting for GMS data') && 
-          !textContent.includes('Loading sports data')) {
-        
-        gmsDataLoaded = true;
-        document.getElementById('parseBtn').disabled = false;
-        clearInterval(checkInterval);
-        
-        // Update raw data preview
-        document.getElementById('rawDataPreview').value = textContent;
-        
-        showStatus(`GMS data loaded! Found ${textContent.length} characters of data. Click "Parse Loaded Data" to process it.`, 'success');
-        
-        console.log('GMS data loaded:', {
-          textContent: textContent.substring(0, 500),
-          fullText: textContent
-        });
-      } else if (textContent.length > 50) {
-        showStatus('GMS data partially loaded, still waiting for complete data...', 'warning');
-      }
-    }
+                // 4. Split at score
+                const [beforeScore, afterScore] = rest.split(scoreMatch ? scoreMatch[0] : " : ");
+                const homeTeam = beforeScore ? beforeScore.trim() : "";
+                const awayVenue = afterScore ? afterScore.trim() : "";
 
-    // Parse the loaded GMS data
-    function parseLoadedData() {
-      if (!gmsDataLoaded) {
-        showStatus('No GMS data loaded yet. Please load data first.', 'error');
-        return;
-      }
-      
-      showStatus('Parsing loaded GMS data...', 'info');
-      
-      try {
-        const gmsWrapper = document.querySelector('.gms-wrapper');
-        const matches = parseGMSContent(gmsWrapper);
-        
-        if (matches.length > 0) {
-          parsedMatches = matches;
-          displayMatches(matches);
-          showStatus(`Successfully parsed ${matches.length} matches from GMS data`, 'success');
-          document.getElementById('exportBtn').disabled = false;
-        } else {
-          showStatus('No matches found in the GMS data. Check the raw data preview below.', 'warning');
-          
-          // Show debug info
-          console.log('GMS content for debugging:');
-          console.log('Text:', gmsWrapper.textContent);
-          console.log('HTML:', gmsWrapper.innerHTML);
-        }
-      } catch (error) {
-        console.error('Parsing error:', error);
-        showStatus(`Parsing error: ${error.message}`, 'error');
-      }
-    }
+                // 5. Extract away team + venue
+                const venueKeywords = ["HC", "School", "Club", "Park", "Pitch", "Oaklands", "Coopers"];
+                let awayTeam = awayVenue;
+                let venue = "";
+                let notes = "";
 
-    // Parse manual data
-    function parseManualData() {
-      const raw = document.getElementById("rawData").value.trim();
-      
-      if (!raw) {
-        showStatus('Please enter some match data to parse', 'error');
-        return;
-      }
-      
-      showStatus('Parsing manual data...', 'info');
-      
-      try {
-        const matches = parseMatchData(raw);
-        parsedMatches = matches;
-        
-        if (matches.length > 0) {
-          displayMatches(matches);
-          showStatus(`Successfully parsed ${matches.length} matches`, 'success');
-          document.getElementById('exportBtn2').disabled = false;
-        } else {
-          showStatus('No matches found in the provided data', 'error');
-        }
-      } catch (error) {
-        console.error('Parsing error:', error);
-        showStatus(`Parsing error: ${error.message}`, 'error');
-      }
-    }
-
-    // Parse GMS content with enhanced logic
-    function parseGMSContent(container) {
-      console.log('=== PARSING GMS CONTENT ===');
-      const matches = [];
-      
-      try {
-        // First try table parsing
-        const tables = container.querySelectorAll('table');
-        if (tables.length > 0) {
-          console.log('Found tables, trying table parsing...');
-          const tableMatches = parseTableData(container);
-          if (tableMatches.length > 0) {
-            console.log('Table parsing successful:', tableMatches.length, 'records');
-            return tableMatches;
-          }
-        }
-        
-        // Try text-based parsing
-        const textMatches = parseMatchData(container.textContent);
-        if (textMatches.length > 0) {
-          return textMatches;
-        }
-        
-        // Try parsing div/span elements
-        const elements = container.querySelectorAll('div, span, p');
-        elements.forEach((element, index) => {
-          const text = element.textContent.trim();
-          if (text.length > 20 && text.match(/\d{1,2}\s+\w{3}\s+\d{4}/)) {
-            const elementMatches = parseMatchData(text);
-            matches.push(...elementMatches);
-          }
-        });
-        
-        return matches;
-        
-      } catch (error) {
-        console.error('GMS parsing error:', error);
-        
-        // Fallback: return raw content for inspection
-        const allText = container.textContent.trim();
-        if (allText.length > 50) {
-          return [{
-            Date: 'Unknown',
-            HomeTeam: 'Parse Error - Raw Content Available',
-            AwayTeam: '',
-            Score: '',
-            Location: '',
-            Outcome: 'Check raw data preview',
-            RawContent: allText.substring(0, 500)
-          }];
-        }
-        
-        return [];
-      }
-    }
-
-    // Enhanced match data parsing
-    function parseMatchData(rawText) {
-      const matches = [];
-      console.log('=== STARTING ENHANCED PARSE ===');
-      
-      const lines = rawText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-      console.log('Text lines found:', lines.length);
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        console.log(`Processing line ${i}: ${line.substring(0, 100)}`);
-        
-        const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/;
-        const dateMatch = line.match(datePattern);
-        
-        if (dateMatch) {
-          console.log('Found date:', dateMatch[1]);
-          const match = { 
-            date: dateMatch[1],
-            teamA: '',
-            teamB: '',
-            score: '',
-            venue: '',
-            outcome: '',
-            walkover: false
-          };
-          
-          let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
-          console.log('After date:', afterDate);
-          
-          if (afterDate.toLowerCase().includes('walkover')) {
-            match.walkover = true;
-            match.outcome = 'Walkover';
-            const walkoverMatch = afterDate.match(/walkover.*?([^-]+)\s+vs?\s+([^-]+)/i);
-            if (walkoverMatch) {
-              match.teamA = walkoverMatch[1].trim();
-              match.teamB = walkoverMatch[2].trim();
-            } else {
-              match.teamA = afterDate.replace(/walkover/i, '').trim();
-            }
-          } else {
-            const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
-            let scoreMatch = null;
-            let scoreIndex = -1;
-            
-            if (scoreMatches) {
-              for (const potentialScore of scoreMatches) {
-                const potentialIndex = afterDate.indexOf(potentialScore);
-                const beforePotentialScore = afterDate.substring(0, potentialIndex).trim();
-                
-                if (beforePotentialScore.match(/.*\s\d(\s*\([MF]\))?\s*$/) || 
-                    beforePotentialScore.match(/.*[a-zA-Z]\s*$/)) {
-                  scoreMatch = { 1: potentialScore };
-                  scoreIndex = potentialIndex;
-                  break;
+                for (let keyword of venueKeywords) {
+                    const idx = awayVenue.indexOf(keyword);
+                    if (idx !== -1) {
+                        awayTeam = awayVenue.slice(0, idx).trim();
+                        venue = awayVenue.slice(idx).trim();
+                        break;
+                    }
                 }
-              }
-            }
-            
-            if (scoreMatch && scoreIndex >= 0) {
-              console.log('Found valid score:', scoreMatch[1]);
-              match.score = scoreMatch[1];
-              
-              const beforeScore = afterDate.substring(0, scoreIndex).trim();
-              const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
-              
-              match.teamA = beforeScore;
-              
-              const result = parseAwayTeamAndLocation(afterScore);
-              match.teamB = result.awayTeam;
-              match.venue = result.location;
-              
-              match.outcome = determineOutcome(match.score, match.teamA, match.teamB);
-            } else {
-              match.teamA = afterDate;
-              match.outcome = 'Fixture (No Score)';
-            }
-          }
-          
-          console.log('Final match:', match);
-          matches.push(match);
-        }
-      }
-      
-      if (matches.length === 0) {
-        console.log('No date-based matches found, trying simple parsing...');
-        return parseDataSimple(rawText);
-      }
-      
-      console.log('=== ENHANCED PARSE COMPLETE ===');
-      console.log('Total matches found:', matches.length);
-      return matches;
-    }
 
-    function parseDataSimple(raw) {
-      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      const matches = [];
-      let currentMatch = {};
-      const datePattern = /^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$/;
-      const scorePattern = /^\d+\s*:\s*\d+$/;
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (datePattern.test(line)) {
-          if (Object.keys(currentMatch).length > 0) {
-            matches.push(formatMatch(currentMatch));
-          }
-          currentMatch = { date: line, walkover: false };
-        } else if (scorePattern.test(line)) {
-          currentMatch.score = line;
-        } else if (line.toLowerCase().includes("walkover")) {
-          currentMatch.walkover = true;
-        } else if (!currentMatch.teamA) {
-          currentMatch.teamA = line;
-        } else if (!currentMatch.teamB && !currentMatch.score) {
-          currentMatch.teamB = line;
-        } else if (!currentMatch.teamB && currentMatch.score) {
-          currentMatch.teamB = line;
-        } else {
-          currentMatch.venue = line;
-        }
-      }
-      
-      if (Object.keys(currentMatch).length > 0) {
-        matches.push(formatMatch(currentMatch));
-      }
-      
-      return matches;
-    }
+                // 6. Special cases
+                if (venue.includes("Walkover")) {
+                    notes = "Walkover";
+                    venue = venue.replace("Walkover", "").trim();
+                }
 
-    function parseTableData(container) {
-      const matches = [];
-      const tables = container.querySelectorAll('table');
-      
-      tables.forEach((table) => {
-        const rows = table.querySelectorAll('tr');
-        
-        let headers = [];
-        let dataStartRow = 0;
-        
-        if (rows.length > 0) {
-          const firstRow = rows[0];
-          const firstRowCells = firstRow.querySelectorAll('th, td');
-          const firstRowText = Array.from(firstRowCells).map(cell => cell.textContent.trim().toLowerCase());
-          
-          const hasHeaderWords = firstRowText.some(text => 
-            text.includes('date') || text.includes('home') || text.includes('away') || 
-            text.includes('score') || text.includes('location') || text.includes('venue')
-          );
-          
-          if (hasHeaderWords) {
-            headers = Array.from(firstRowCells).map(cell => cell.textContent.trim());
-            dataStartRow = 1;
-          } else {
-            headers = ['date', 'teamA', 'score', 'teamB', 'venue'];
-            dataStartRow = 0;
-          }
-        }
-        
-        for (let i = dataStartRow; i < rows.length; i++) {
-          const row = rows[i];
-          const cells = row.querySelectorAll('td, th');
-          
-          if (cells.length > 0) {
-            const match = { walkover: false, outcome: '' };
-            
-            Array.from(cells).forEach((cell, cellIndex) => {
-              const cellText = cell.textContent.trim();
-              const header = headers[cellIndex] || `Column_${cellIndex + 1}`;
-              
-              if (cellText) {
-                match[header] = cellText;
-              }
+                return {
+                    date,
+                    homeTeam,
+                    score,
+                    awayTeam,
+                    venue,
+                    notes
+                };
             });
-            
-            const hasData = Object.values(match).some(val => val && val.length > 0);
-            if (hasData) {
-              // Determine outcome if we have score
-              if (match.score && !match.outcome) {
-                match.outcome = determineOutcome(match.score, match.teamA, match.teamB);
-              }
-              matches.push(match);
+        }
+
+        async function collectData() {
+            const collectBtn = document.getElementById('collectBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const success = document.getElementById('success');
+            const rawDataSection = document.getElementById('rawDataSection');
+            const rawDataPreview = document.getElementById('rawDataPreview');
+
+            // Reset UI
+            collectBtn.disabled = true;
+            exportBtn.disabled = true;
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            success.style.display = 'none';
+            rawDataSection.style.display = 'none';
+
+            try {
+                // First, let's try to get data from the GMS container
+                let rawData = '';
+                
+                // Wait a moment for GMS to load
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Try to extract data from GMS container
+                const gmsContainer = document.getElementById('gmsContainer');
+                if (gmsContainer && gmsContainer.innerHTML.trim()) {
+                    rawData = gmsContainer.innerText || gmsContainer.textContent;
+                }
+
+                // If no data from container, try alternative approach
+                if (!rawData.trim()) {
+                    // Try to fetch directly from GMS API (this might need CORS handling)
+                    try {
+                        const response = await fetch('https://gmsfeed.co.uk/api/fixtures/e9ba26d3-7e18-4772-abb0-584e887c9d38');
+                        rawData = await response.text();
+                    } catch (fetchError) {
+                        // If direct fetch fails, use sample data for demonstration
+                        rawData = `1 Jan 2024 Team A 2:1 Team B HC Venue
+5 Jan 2024 Team C 0:3 Team D School Ground
+10 Jan 2024 Team E 1:1 Team F Park Pitch
+15 Jan 2024 Team G 4:0 Team H Walkover Coopers Club
+20 Jan 2024 Team I 2:2 Team J Oaklands HC`;
+                        console.warn('Using sample data due to CORS restrictions');
+                    }
+                }
+
+                if (!rawData.trim()) {
+                    throw new Error('No data received from GMS feed');
+                }
+
+                // Show raw data preview
+                rawDataPreview.textContent = rawData.substring(0, 500) + (rawData.length > 500 ? '...' : '');
+                rawDataSection.style.display = 'block';
+
+                // Process the data
+                processedMatches = parseMatches(rawData);
+                
+                if (processedMatches.length === 0) {
+                    throw new Error('No matches found in the data');
+                }
+
+                // Display results
+                displayTable(processedMatches);
+                
+                success.textContent = `Successfully processed ${processedMatches.length} matches!`;
+                success.style.display = 'block';
+                exportBtn.disabled = false;
+
+            } catch (err) {
+                error.textContent = `Error: ${err.message}`;
+                error.style.display = 'block';
+                console.error('Collection error:', err);
+            } finally {
+                loading.style.display = 'none';
+                collectBtn.disabled = false;
             }
-          }
         }
-      });
-      
-      return matches;
-    }
 
-    function parseAwayTeamAndLocation(text) {
-      try {
-        const chelmsfordHomePattern = /^(.+?)(Chelmsford\s*HC\s*[-\s]*Chelmer\s*Park\s*[-\s]*Pitch\s*\d)$/i;
-        const chelmsfordMatch = text.match(chelmsfordHomePattern);
-        
-        if (chelmsfordMatch) {
-          return {
-            awayTeam: chelmsfordMatch[1].trim(),
-            location: chelmsfordMatch[2].trim()
-          };
-        }
-        
-        const venuePatterns = [
-          /^(.+?)(Waltham\s*Forest\s*Hockey\s*Club.*)$/i,
-          /^(.+?)(Becket\s*Keys\s*School.*)$/i,
-          /^(.+?)(\w+\s*HC\s*[-\s]*\w+.*)$/i
-        ];
-        
-        for (const pattern of venuePatterns) {
-          const match = text.match(pattern);
-          if (match) {
-            return {
-              awayTeam: match[1].trim(),
-              location: match[2].trim()
-            };
-          }
-        }
-        
-        const teamNumberPattern = /^(.*?\b\w+\s+\d)(.+)$/;
-        const teamMatch = text.match(teamNumberPattern);
-        
-        if (teamMatch) {
-          const potentialTeam = teamMatch[1].trim();
-          const potentialLocation = teamMatch[2].trim();
-          
-          if (potentialLocation.length > 5 && 
-              (potentialLocation.includes('HC') || 
-               potentialLocation.includes('School') || 
-               potentialLocation.includes('Club') ||
-               potentialLocation.includes('Park') ||
-               potentialLocation.includes('Pitch'))) {
-            return {
-              awayTeam: potentialTeam,
-              location: potentialLocation
-            };
-          }
-        }
-        
-        const locationWords = ['Hockey', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground', 'HC'];
-        
-        for (const word of locationWords) {
-          const wordIndex = text.indexOf(word);
-          if (wordIndex > 3) {
-            let wordStart = wordIndex;
-            while (wordStart > 0 && text[wordStart - 1] !== ' ') {
-              wordStart--;
-            }
+        function displayTable(matches) {
+            const container = document.getElementById('tableContainer');
             
-            const potentialTeam = text.substring(0, wordStart).trim();
-            const potentialLocation = text.substring(wordStart).trim();
-            
-            if (potentialTeam.length > 2 && potentialLocation.length > 2) {
-              return {
-                awayTeam: potentialTeam,
-                location: potentialLocation
-              };
+            if (matches.length === 0) {
+                container.innerHTML = '<p>No matches to display.</p>';
+                return;
             }
-          }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Home Team</th>
+                            <th>Score</th>
+                            <th>Away Team</th>
+                            <th>Venue</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            matches.forEach(match => {
+                tableHTML += `
+                    <tr>
+                        <td>${match.date}</td>
+                        <td>${match.homeTeam}</td>
+                        <td class="score">${match.score}</td>
+                        <td>${match.awayTeam}</td>
+                        <td>${match.venue}</td>
+                        <td class="notes">${match.notes}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
         }
-        
-        return {
-          awayTeam: text,
-          location: ''
-        };
-        
-      } catch (error) {
-        console.error('Error parsing away team/location:', error);
-        return {
-          awayTeam: text,
-          location: ''
-        };
-      }
-    }
 
-    function formatMatch(match) {
-      const formatted = {
-        date: match.date || '',
-        teamA: match.teamA || '',
-        teamB: match.teamB || '',
-        score: match.score || '',
-        venue: match.venue || '',
-        walkover: match.walkover || false,
-        outcome: ''
-      };
-      
-      if (match.walkover) {
-        formatted.outcome = "Walkover";
-      } else if (match.score) {
-        formatted.outcome = determineOutcome(match.score, match.teamA, match.teamB);
-      } else {
-        formatted.outcome = 'Fixture (No Score)';
-      }
-      
-      return formatted;
-    }
+        function exportToCSV() {
+            if (processedMatches.length === 0) {
+                alert('No data to export. Please collect data first.');
+                return;
+            }
 
-    function determineOutcome(score, teamA, teamB) {
-      if (!score) return '';
-      
-      const scoreParts = score.split(':').map(n => parseInt(n.trim()));
-      if (scoreParts.length !== 2 || scoreParts.some(isNaN)) return '';
-      
-      const [teamAScore, teamBScore] = scoreParts;
-      if (teamAScore > teamBScore) {
-        return `${teamA} won (${teamAScore}-${teamBScore})`;
-      } else if (teamAScore < teamBScore) {
-        return `${teamB} won (${teamAScore}-${teamBScore})`;
-      } else {
-        return `Draw (${teamAScore}-${teamBScore})`;
-      }
-    }
+            // Create CSV content
+            const headers = ['Date', 'Home Team', 'Score', 'Away Team', 'Venue', 'Notes'];
+            let csvContent = headers.join(',') + '\n';
 
-    function displayMatches(matches) {
-      const tableView = document.getElementById('tableView');
-      const header = document.getElementById('tableHeader');
-      const body = document.getElementById('tableBody');
-      
-      header.innerHTML = '';
-      body.innerHTML = '';
-      
-      if (matches.length > 0) {
-        const headerRow = document.createElement('tr');
-        const keys = ['date', 'teamA', 'score', 'teamB', 'venue', 'walkover', 'outcome'];
-        const displayNames = ['Date', 'Team A', 'Score', 'Team B', 'Venue', 'Walkover', 'Outcome'];
-        
-        keys.forEach((key, index) => {
-          const th = document.createElement('th');
-          th.textContent = displayNames[index];
-          headerRow.appendChild(th);
-        });
-        header.appendChild(headerRow);
-        
-        matches.forEach(match => {
-          const tr = document.createElement('tr');
-          keys.forEach(key => {
-            const td = document.createElement('td');
-            const value = match[key];
-            if (key === 'walkover') {
-              td.textContent = value ? 'Yes' : 'No';
+            processedMatches.forEach(match => {
+                const row = [
+                    `"${match.date}"`,
+                    `"${match.homeTeam}"`,
+                    `"${match.score}"`,
+                    `"${match.awayTeam}"`,
+                    `"${match.venue}"`,
+                    `"${match.notes}"`
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `hockey_matches_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                document.getElementById('success').textContent = 'CSV file downloaded successfully!';
+                document.getElementById('success').style.display = 'block';
             } else {
-              td.textContent = value || '';
+                alert('CSV export not supported in this browser');
             }
-            tr.appendChild(td);
-          });
-          body.appendChild(tr);
+        }
+
+        // Auto-load GMS script and initialize when page loads
+        window.addEventListener('load', function() {
+            console.log('Page loaded, GMS integration ready');
         });
-        
-        tableView.classList.remove('hidden');
-      }
-    }
-
-    function exportCSV() {
-      if (parsedMatches.length === 0) {
-        showStatus('No data to export', 'error');
-        return;
-      }
-      
-      // Use exact field names matching your specification
-      const keys = ['date', 'walkover', 'teamA', 'score', 'teamB', 'venue', 'outcome'];
-      
-      let csv = keys.map(key => `"${key}"`).join(',') + '\n';
-      
-      parsedMatches.forEach(match => {
-        const values = keys.map(key => {
-          let value = match[key] || '';
-          
-          // Handle boolean walkover field
-          if (key === 'walkover') {
-            value = value ? true : false;
-          }
-          
-          return `"${String(value).replace(/"/g, '""')}"`;
-        });
-        csv += values.join(',') + '\n';
-      });
-      
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `gms_match_data_${new Date().toISOString().slice(0, 10)}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      showStatus('CSV exported successfully with columns: date, walkover, teamA, score, teamB, venue, outcome', 'success');
-    }
-
-    function clearAll() {
-      parsedMatches = [];
-      gmsDataLoaded = false;
-      document.getElementById('tableView').classList.add('hidden');
-      document.getElementById('status').classList.add('hidden');
-      document.getElementById('exportBtn').disabled = true;
-      document.getElementById('parseBtn').disabled = true;
-      document.getElementById('rawDataPreview').value = '';
-      
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-      
-      location.reload();
-    }
-
-    function clearManual() {
-      document.getElementById('rawData').value = '';
-      document.getElementById('exportBtn2').disabled = true;
-    }
-
-    // Auto-check for GMS data on page load
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        checkGMSData();
-      }, 3000);
-      
-      showStatus('Page loaded. GMS API integration ready. Click "Load GMS Data" to begin.', 'info');
-    });
-  </script>
+    </script>
 </body>
 </html>

@@ -170,19 +170,30 @@
         let processedMatches = [];
 
         function parseMatches(rawData) {
-            console.log("Raw data received:", rawData.substring(0, 500));
+            console.log("Raw data received:", rawData.substring(0, 1000));
+            console.log("Raw data length:", rawData.length);
             
             const matches = [];
             
-            // Regex to capture: date, time, teamA, scoreA, scoreB, teamB, venue
-            const regex = /(\d{2} \w{3} \d{4})(\d{2}:\d{2})([A-Za-z &]+ \d+)\s(\d+) : (\d+)([A-Za-z &]+ \d+)([^\n]*)/g;
-            let match;
+            // Your original regex pattern
+            const regex1 = /(\d{2} \w{3} \d{4})(\d{2}:\d{2})([A-Za-z &]+ \d+)\s(\d+) : (\d+)([A-Za-z &]+ \d+)([^\n]*)/g;
             
-            while ((match = regex.exec(rawData)) !== null) {
+            // Alternative regex patterns to try if the first one fails
+            const regex2 = /(\d{1,2} \w{3} \d{4})(\d{1,2}:\d{2})([^0-9]+)(\d+)\s*:\s*(\d+)([^0-9]+)([^\n]*)/g;
+            const regex3 = /(\d{1,2} \w{3} \d{4})(\d{1,2}:\d{2})(.+?)(\d+)\s*:\s*(\d+)(.+?)([A-Za-z].*)/g;
+            
+            let match;
+            let regexUsed = "none";
+            
+            // Try original regex first
+            console.log("Trying original regex pattern...");
+            while ((match = regex1.exec(rawData)) !== null) {
+                regexUsed = "regex1";
+                console.log("Match found with regex1:", match);
+                
                 let notes = "";
                 let venue = match[7].trim();
                 
-                // Check for special cases like Walkover
                 if (venue.includes("Walkover")) {
                     notes = "Walkover";
                     venue = venue.replace("Walkover", "").trim();
@@ -196,13 +207,115 @@
                     awayTeam: match[6].trim(),
                     venue: venue,
                     notes: notes,
-                    // Also store individual scores for CSV export
                     homeScore: parseInt(match[4], 10),
                     awayScore: parseInt(match[5], 10)
                 });
             }
             
-            console.log("Parsed matches:", matches);
+            // If no matches with regex1, try regex2
+            if (matches.length === 0) {
+                console.log("Trying alternative regex pattern 2...");
+                while ((match = regex2.exec(rawData)) !== null) {
+                    regexUsed = "regex2";
+                    console.log("Match found with regex2:", match);
+                    
+                    let notes = "";
+                    let venue = match[7] ? match[7].trim() : "";
+                    
+                    if (venue.includes("Walkover")) {
+                        notes = "Walkover";
+                        venue = venue.replace("Walkover", "").trim();
+                    }
+                    
+                    matches.push({
+                        date: match[1].trim(),
+                        time: match[2].trim(),
+                        homeTeam: match[3].trim(),
+                        score: `${match[4]}:${match[5]}`,
+                        awayTeam: match[6].trim(),
+                        venue: venue,
+                        notes: notes,
+                        homeScore: parseInt(match[4], 10),
+                        awayScore: parseInt(match[5], 10)
+                    });
+                }
+            }
+            
+            // If still no matches, try a more flexible approach
+            if (matches.length === 0) {
+                console.log("Trying flexible parsing approach...");
+                
+                // Split by lines if they exist, or try to find date patterns
+                let lines = rawData.includes('\n') ? rawData.split('\n') : [rawData];
+                
+                // If it's one continuous line, try to split by date patterns
+                if (lines.length === 1) {
+                    const datePattern = /(\d{1,2} \w{3} \d{4})/g;
+                    const parts = rawData.split(datePattern).filter(part => part.trim());
+                    lines = [];
+                    for (let i = 0; i < parts.length - 1; i += 2) {
+                        if (parts[i] && parts[i + 1]) {
+                            lines.push(parts[i] + parts[i + 1]);
+                        }
+                    }
+                }
+                
+                lines.forEach((line, index) => {
+                    console.log(`Processing line ${index}:`, line.substring(0, 100));
+                    
+                    // Look for date, time, and score patterns
+                    const dateMatch = line.match(/(\d{1,2} \w{3} \d{4})/);
+                    const timeMatch = line.match(/(\d{1,2}:\d{2})/);
+                    const scoreMatch = line.match(/(\d+)\s*:\s*(\d+)/);
+                    
+                    if (dateMatch && timeMatch && scoreMatch) {
+                        const date = dateMatch[1];
+                        const time = timeMatch[1];
+                        const homeScore = scoreMatch[1];
+                        const awayScore = scoreMatch[2];
+                        
+                        // Try to extract team names around the score
+                        const beforeScore = line.substring(0, line.indexOf(scoreMatch[0]));
+                        const afterScore = line.substring(line.indexOf(scoreMatch[0]) + scoreMatch[0].length);
+                        
+                        // Remove date and time from before score
+                        let homeTeamSection = beforeScore.replace(date, '').replace(time, '').trim();
+                        let awayTeamVenue = afterScore.trim();
+                        
+                        // Extract venue (everything after the away team)
+                        let venue = "";
+                        let awayTeam = awayTeamVenue;
+                        
+                        // Look for common venue keywords to separate team from venue
+                        const venueKeywords = ["HC", "School", "Club", "Park", "Pitch", "Academy", "Ground"];
+                        for (let keyword of venueKeywords) {
+                            const idx = awayTeamVenue.indexOf(keyword);
+                            if (idx !== -1) {
+                                awayTeam = awayTeamVenue.substring(0, idx).trim();
+                                venue = awayTeamVenue.substring(idx).trim();
+                                break;
+                            }
+                        }
+                        
+                        matches.push({
+                            date: date,
+                            time: time,
+                            homeTeam: homeTeamSection,
+                            score: `${homeScore}:${awayScore}`,
+                            awayTeam: awayTeam,
+                            venue: venue,
+                            notes: "",
+                            homeScore: parseInt(homeScore, 10),
+                            awayScore: parseInt(awayScore, 10)
+                        });
+                        
+                        regexUsed = "flexible";
+                    }
+                });
+            }
+            
+            console.log(`Parsed ${matches.length} matches using ${regexUsed}`);
+            console.log("First few matches:", matches.slice(0, 3));
             return matches;
         }
 

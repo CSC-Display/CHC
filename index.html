@@ -485,27 +485,27 @@ Walkover - Team C vs Team D"></textarea>
         if (dateMatch) {
           console.log('Found date:', dateMatch[1]);
           const match = { 
-            Date: dateMatch[1],
-            HomeTeam: '',
-            AwayTeam: '',
-            Score: '',
-            Location: '',
-            Outcome: '',
-            Walkover: false
+            date: dateMatch[1],
+            teamA: '',
+            teamB: '',
+            score: '',
+            venue: '',
+            outcome: '',
+            walkover: false
           };
           
           let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
           console.log('After date:', afterDate);
           
           if (afterDate.toLowerCase().includes('walkover')) {
-            match.Walkover = true;
-            match.Outcome = 'Walkover';
+            match.walkover = true;
+            match.outcome = 'Walkover';
             const walkoverMatch = afterDate.match(/walkover.*?([^-]+)\s+vs?\s+([^-]+)/i);
             if (walkoverMatch) {
-              match.HomeTeam = walkoverMatch[1].trim();
-              match.AwayTeam = walkoverMatch[2].trim();
+              match.teamA = walkoverMatch[1].trim();
+              match.teamB = walkoverMatch[2].trim();
             } else {
-              match.HomeTeam = afterDate.replace(/walkover/i, '').trim();
+              match.teamA = afterDate.replace(/walkover/i, '').trim();
             }
           } else {
             const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
@@ -528,21 +528,21 @@ Walkover - Team C vs Team D"></textarea>
             
             if (scoreMatch && scoreIndex >= 0) {
               console.log('Found valid score:', scoreMatch[1]);
-              match.Score = scoreMatch[1];
+              match.score = scoreMatch[1];
               
               const beforeScore = afterDate.substring(0, scoreIndex).trim();
               const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
               
-              match.HomeTeam = beforeScore;
+              match.teamA = beforeScore;
               
               const result = parseAwayTeamAndLocation(afterScore);
-              match.AwayTeam = result.awayTeam;
-              match.Location = result.location;
+              match.teamB = result.awayTeam;
+              match.venue = result.location;
               
-              match.Outcome = determineOutcome(match.Score, match.HomeTeam, match.AwayTeam);
+              match.outcome = determineOutcome(match.score, match.teamA, match.teamB);
             } else {
-              match.HomeTeam = afterDate;
-              match.Outcome = 'Fixture (No Score)';
+              match.teamA = afterDate;
+              match.outcome = 'Fixture (No Score)';
             }
           }
           
@@ -574,19 +574,19 @@ Walkover - Team C vs Team D"></textarea>
           if (Object.keys(currentMatch).length > 0) {
             matches.push(formatMatch(currentMatch));
           }
-          currentMatch = { Date: line, Walkover: false };
+          currentMatch = { date: line, walkover: false };
         } else if (scorePattern.test(line)) {
-          currentMatch.Score = line;
+          currentMatch.score = line;
         } else if (line.toLowerCase().includes("walkover")) {
-          currentMatch.Walkover = true;
-        } else if (!currentMatch.HomeTeam) {
-          currentMatch.HomeTeam = line;
-        } else if (!currentMatch.AwayTeam && !currentMatch.Score) {
-          currentMatch.AwayTeam = line;
-        } else if (!currentMatch.AwayTeam && currentMatch.Score) {
-          currentMatch.AwayTeam = line;
+          currentMatch.walkover = true;
+        } else if (!currentMatch.teamA) {
+          currentMatch.teamA = line;
+        } else if (!currentMatch.teamB && !currentMatch.score) {
+          currentMatch.teamB = line;
+        } else if (!currentMatch.teamB && currentMatch.score) {
+          currentMatch.teamB = line;
         } else {
-          currentMatch.Location = line;
+          currentMatch.venue = line;
         }
       }
       
@@ -614,14 +614,14 @@ Walkover - Team C vs Team D"></textarea>
           
           const hasHeaderWords = firstRowText.some(text => 
             text.includes('date') || text.includes('home') || text.includes('away') || 
-            text.includes('score') || text.includes('location')
+            text.includes('score') || text.includes('location') || text.includes('venue')
           );
           
           if (hasHeaderWords) {
             headers = Array.from(firstRowCells).map(cell => cell.textContent.trim());
             dataStartRow = 1;
           } else {
-            headers = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
+            headers = ['date', 'teamA', 'score', 'teamB', 'venue'];
             dataStartRow = 0;
           }
         }
@@ -631,7 +631,7 @@ Walkover - Team C vs Team D"></textarea>
           const cells = row.querySelectorAll('td, th');
           
           if (cells.length > 0) {
-            const match = { Walkover: false, Outcome: '' };
+            const match = { walkover: false, outcome: '' };
             
             Array.from(cells).forEach((cell, cellIndex) => {
               const cellText = cell.textContent.trim();
@@ -645,8 +645,8 @@ Walkover - Team C vs Team D"></textarea>
             const hasData = Object.values(match).some(val => val && val.length > 0);
             if (hasData) {
               // Determine outcome if we have score
-              if (match.Score && !match.Outcome) {
-                match.Outcome = determineOutcome(match.Score, match.HomeTeam, match.AwayTeam);
+              if (match.score && !match.outcome) {
+                match.outcome = determineOutcome(match.score, match.teamA, match.teamB);
               }
               matches.push(match);
             }
@@ -743,39 +743,39 @@ Walkover - Team C vs Team D"></textarea>
 
     function formatMatch(match) {
       const formatted = {
-        Date: match.Date || '',
-        HomeTeam: match.HomeTeam || '',
-        AwayTeam: match.AwayTeam || '',
-        Score: match.Score || '',
-        Location: match.Location || '',
-        Walkover: match.Walkover || false,
-        Outcome: ''
+        date: match.date || '',
+        teamA: match.teamA || '',
+        teamB: match.teamB || '',
+        score: match.score || '',
+        venue: match.venue || '',
+        walkover: match.walkover || false,
+        outcome: ''
       };
       
-      if (match.Walkover) {
-        formatted.Outcome = "Walkover";
-      } else if (match.Score) {
-        formatted.Outcome = determineOutcome(match.Score, match.HomeTeam, match.AwayTeam);
+      if (match.walkover) {
+        formatted.outcome = "Walkover";
+      } else if (match.score) {
+        formatted.outcome = determineOutcome(match.score, match.teamA, match.teamB);
       } else {
-        formatted.Outcome = 'Fixture (No Score)';
+        formatted.outcome = 'Fixture (No Score)';
       }
       
       return formatted;
     }
 
-    function determineOutcome(score, homeTeam, awayTeam) {
+    function determineOutcome(score, teamA, teamB) {
       if (!score) return '';
       
       const scoreParts = score.split(':').map(n => parseInt(n.trim()));
       if (scoreParts.length !== 2 || scoreParts.some(isNaN)) return '';
       
-      const [homeScore, awayScore] = scoreParts;
-      if (homeScore > awayScore) {
-        return `${homeTeam} won (${homeScore}-${awayScore})`;
-      } else if (homeScore < awayScore) {
-        return `${awayTeam} won (${homeScore}-${awayScore})`;
+      const [teamAScore, teamBScore] = scoreParts;
+      if (teamAScore > teamBScore) {
+        return `${teamA} won (${teamAScore}-${teamBScore})`;
+      } else if (teamAScore < teamBScore) {
+        return `${teamB} won (${teamAScore}-${teamBScore})`;
       } else {
-        return `Draw (${homeScore}-${awayScore})`;
+        return `Draw (${teamAScore}-${teamBScore})`;
       }
     }
 
@@ -789,10 +789,12 @@ Walkover - Team C vs Team D"></textarea>
       
       if (matches.length > 0) {
         const headerRow = document.createElement('tr');
-        const keys = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location', 'Outcome'];
-        keys.forEach(key => {
+        const keys = ['date', 'teamA', 'score', 'teamB', 'venue', 'walkover', 'outcome'];
+        const displayNames = ['Date', 'Team A', 'Score', 'Team B', 'Venue', 'Walkover', 'Outcome'];
+        
+        keys.forEach((key, index) => {
           const th = document.createElement('th');
-          th.textContent = key.replace(/([A-Z])/g, ' $1').trim();
+          th.textContent = displayNames[index];
           headerRow.appendChild(th);
         });
         header.appendChild(headerRow);
@@ -801,7 +803,12 @@ Walkover - Team C vs Team D"></textarea>
           const tr = document.createElement('tr');
           keys.forEach(key => {
             const td = document.createElement('td');
-            td.textContent = match[key] || '';
+            const value = match[key];
+            if (key === 'walkover') {
+              td.textContent = value ? 'Yes' : 'No';
+            } else {
+              td.textContent = value || '';
+            }
             tr.appendChild(td);
           });
           body.appendChild(tr);
@@ -817,13 +824,20 @@ Walkover - Team C vs Team D"></textarea>
         return;
       }
       
-      const keys = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location', 'Outcome'];
+      // Use exact field names matching your specification
+      const keys = ['date', 'walkover', 'teamA', 'score', 'teamB', 'venue', 'outcome'];
       
       let csv = keys.map(key => `"${key}"`).join(',') + '\n';
       
       parsedMatches.forEach(match => {
         const values = keys.map(key => {
-          const value = match[key] || '';
+          let value = match[key] || '';
+          
+          // Handle boolean walkover field
+          if (key === 'walkover') {
+            value = value ? true : false;
+          }
+          
           return `"${String(value).replace(/"/g, '""')}"`;
         });
         csv += values.join(',') + '\n';
@@ -839,7 +853,7 @@ Walkover - Team C vs Team D"></textarea>
       link.click();
       document.body.removeChild(link);
       
-      showStatus('CSV exported successfully', 'success');
+      showStatus('CSV exported successfully with columns: date, walkover, teamA, score, teamB, venue, outcome', 'success');
     }
 
     function clearAll() {

@@ -1,941 +1,567 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sports Club Data Scraper</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background-color: #1e7e34;
-        }
-        
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-        
-        #status {
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            font-weight: bold;
-        }
-        
-        .status-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .data-preview {
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            max-height: 400px;
-            overflow: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-        }
-        
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .gms-wrapper {
-            margin: 20px 0;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #fafafa;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Enhanced Match Data Filter</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    textarea { 
+      width: 100%; 
+      height: 200px; 
+      margin-bottom: 10px; 
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: monospace;
+    }
+    
+    button { 
+      padding: 12px 24px; 
+      margin: 10px 10px 20px 0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    
+    .btn-success {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background-color: #1e7e34;
+    }
+    
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #545b62;
+    }
+    
+    pre { 
+      background: #f4f4f4; 
+      padding: 15px; 
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 400px;
+    }
+    
+    .data-preview {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      max-height: 400px;
+      overflow: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+    }
+    
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+    
+    #status {
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    
+    .status-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .status-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Sports Club Fixtures & Results to CSV</h1>
-        
-        <div class="controls">
-            <button id="loadData" class="btn-primary">Load Sports Data</button>
-            <button id="exportCSV" class="btn-success" disabled>Export to CSV</button>
-            <button id="clearData" class="btn-secondary">Clear Data</button>
-        </div>
-        
-        <div id="status" class="hidden"></div>
-        
-        <div id="dataPreview" class="data-preview hidden">
-            <table id="dataTable">
-                <thead id="tableHeader"></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
-        
-        <!-- Original GMS wrapper -->
-        <div class="gms-wrapper gms-ajax" 
-             data-method="api" 
-             data-show="results" 
-             data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
-             data-whatson="7" 
-             data-sort_by="fixtureTime" 
-             data-options="showGender:yes,showList:yes"
-             data-css="no">
-            <div class="loading">Loading sports data...</div>
-        </div>
+  <div class="container">
+    <h1>Enhanced Match Data Filter</h1>
+    <p>Paste match results below (supports various formats including dates, teams, scores, and venues):</p>
+    <textarea id="rawData" placeholder="Example:
+15 Oct 2024
+Chelmsford 1 (M) 2:1 Waltham Forest 1 Chelmsford HC - Chelmer Park - Pitch 1
+16 Oct 2024  
+Team A 0:3 Team B School Sports Ground
+Walkover - Team C vs Team D"></textarea>
+    <br>
+    <button onclick="parseData()" class="btn-primary">Parse Match Data</button>
+    <button onclick="exportCSV()" class="btn-success" id="exportBtn" disabled>Export to CSV</button>
+    <button onclick="clearData()" class="btn-secondary">Clear Data</button>
+    
+    <div id="status" class="hidden"></div>
+    
+    <h2>Parsed Matches:</h2>
+    <div id="tableView" class="data-preview hidden">
+      <table>
+        <thead id="tableHeader"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
     </div>
+    
+    <pre id="jsonOutput"></pre>
+  </div>
 
-    <script src="https://gmsfeed.co.uk/js/api.js"></script>
-    <script>
-        let sportsData = [];
-        let dataLoaded = false;
+  <script>
+    let parsedMatches = [];
 
-        // Status display function
-        function showStatus(message, type = 'info') {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
-            statusEl.className = `status-${type}`;
-            statusEl.classList.remove('hidden');
+    // Status display function
+    function showStatus(message, type = 'info') {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `status-${type}`;
+      statusEl.classList.remove('hidden');
+    }
+
+    // Enhanced parsing function with sophisticated logic
+    function parseData() {
+      const raw = document.getElementById("rawData").value.trim();
+      
+      if (!raw) {
+        showStatus('Please enter some match data to parse', 'error');
+        return;
+      }
+      
+      showStatus('Parsing match data...', 'info');
+      
+      try {
+        const matches = parseMatchData(raw);
+        parsedMatches = matches;
+        
+        if (matches.length > 0) {
+          displayMatches(matches);
+          showStatus(`Successfully parsed ${matches.length} matches`, 'success');
+          document.getElementById('exportBtn').disabled = false;
+        } else {
+          showStatus('No matches found in the provided data', 'error');
         }
+      } catch (error) {
+        console.error('Parsing error:', error);
+        showStatus(`Parsing error: ${error.message}`, 'error');
+      }
+    }
 
-        // Simple parsing function with better error handling (UPDATED)
-        function parseGMSData(container) {
-            const data = [];
-            console.log('=== STARTING PARSE ===');
-            
-            try {
-                // First try table parsing
-                const tables = container.querySelectorAll('table');
-                if (tables.length > 0) {
-                    console.log('Found tables, trying table parsing...');
-                    const tableData = parseTableData(container);
-                    if (tableData.length > 0) {
-                        console.log('Table parsing successful:', tableData.length, 'records');
-                        return tableData;
-                    }
-                }
-                
-                // Try text parsing
-                const allText = container.textContent.trim();
-                console.log('Raw text content length:', allText.length);
-                
-                if (!allText || allText.length < 10) {
-                    console.log('No meaningful content found');
-                    return data;
-                }
-                
-                // Split text into lines for processing
-                const lines = allText.split('\n').map(line => line.trim()).filter(line => line.length > 5);
-                console.log('Text lines found:', lines.length);
-                
-                // Process each line looking for fixture data
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    console.log(`Processing line ${i}: ${line.substring(0, 100)}`);
-                    
-                    // Skip header lines
-                    if (line.toLowerCase().includes('date') || 
-                        line.toLowerCase().includes('home') || 
-                        line.toLowerCase().includes('away') ||
-                        line.toLowerCase().includes('score') ||
-                        line.toLowerCase().includes('location') ||
-                        line.includes('[Club match')) {
-                        console.log('Skipping header line');
-                        continue;
-                    }
-                    
-                    // Look for date pattern at start of line
-                    const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/;
-                    const dateMatch = line.match(datePattern);
-                    
-                    if (dateMatch) {
-                        console.log('Found date:', dateMatch[1]);
-                        const fixture = { Date: dateMatch[1] };
-                        
-                        // Get text after the date - be more careful with replacement
-                        let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
-                        console.log('After date:', afterDate);
-                        
-                        // Look for score pattern - be very specific about valid score format
-                        // Scores should be in format like "0:3", "2:1", "10:2" but NOT include team numbers
-                        const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
-                        let scoreMatch = null;
-                        let scoreIndex = -1;
-                        
-                        if (scoreMatches) {
-                            // Find the score that looks most like an actual match score
-                            for (const potentialScore of scoreMatches) {
-                                const potentialIndex = afterDate.indexOf(potentialScore);
-                                const beforePotentialScore = afterDate.substring(0, potentialIndex).trim();
-                                
-                                // Check if what comes before looks like a complete team name
-                                // Team names should end with a space + single digit, or ) for gender
-                                if (beforePotentialScore.match(/.*\s\d(\s*\([MF]\))?\s*$/) || 
-                                    beforePotentialScore.match(/.*[a-zA-Z]\s*$/)) {
-                                    scoreMatch = { 1: potentialScore };
-                                    scoreIndex = potentialIndex;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        if (scoreMatch && scoreIndex >= 0) {
-                            console.log('Found valid score:', scoreMatch[1]);
-                            fixture.Score = scoreMatch[1];
-                            
-                            // Split by score using the exact position
-                            const beforeScore = afterDate.substring(0, scoreIndex).trim();
-                            const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
-                            
-                            console.log('Before score (home team):', beforeScore);
-                            console.log('After score (away + location):', afterScore);
-                            
-                            fixture.HomeTeam = beforeScore;
-                            
-                            // Parse away team and location
-                            const result = parseAwayTeamAndLocation(afterScore);
-                            fixture.AwayTeam = result.awayTeam;
-                            fixture.Location = result.location;
-                        } else {
-                            // No score - might be a future fixture
-                            fixture.Score = '';
-                            fixture.HomeTeam = afterDate;
-                            fixture.AwayTeam = '';
-                            fixture.Location = '';
-                        }
-                        
-                        console.log('Final fixture:', fixture);
-                        data.push(fixture);
-                    }
-                }
-                
-                // If no structured data found, try the manual chunking approach
-                if (data.length === 0) {
-                    console.log('No structured data found, trying manual chunking...');
-                    const chunks = allText.split(/(?=\d{1,2}\s+\w{3}\s+\d{4})/);
-                    chunks.forEach((chunk, index) => {
-                        if (chunk.trim().length > 20) {
-                            // Try to parse each chunk as a fixture
-                            const chunkData = parseChunkAsFixture(chunk.trim());
-                            if (chunkData) {
-                                data.push(chunkData);
-                            } else {
-                                // Fallback: add as raw content
-                                data.push({
-                                    ChunkNumber: index + 1,
-                                    RawContent: chunk.trim().substring(0, 200),
-                                    Date: extractDateFromChunk(chunk.trim()),
-                                    Content: chunk.trim()
-                                });
-                            }
-                        }
-                    });
-                }
-                
-                console.log('=== PARSE COMPLETE ===');
-                console.log('Total fixtures found:', data.length);
-                return data;
-                
-            } catch (error) {
-                console.error('Parse error:', error);
-                // Return something rather than nothing
-                const allText = container.textContent.trim();
-                if (allText.length > 50) {
-                    return [{
-                        Type: 'Parse Error - Raw Content',
-                        Error: error.message,
-                        Content: allText.substring(0, 500),
-                        FullContent: allText
-                    }];
-                }
-                return [];
-            }
-        }
-
-        // Helper function to parse individual chunks
-        function parseChunkAsFixture(chunk) {
-            try {
-                const dateMatch = chunk.match(/(\d{1,2}\s+\w{3}\s+\d{4})/);
-                if (!dateMatch) return null;
-                
-                const fixture = { Date: dateMatch[1] };
-                // Use substring instead of replace to preserve the date
-                const afterDate = chunk.substring(chunk.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
-                
-                // Smart score detection - look for actual match scores vs team numbers
-                const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
-                let scoreMatch = null;
-                let scoreIndex = -1;
-                
-                if (scoreMatches) {
-                    // Find the score that looks most like an actual match score
-                    for (const potentialScore of scoreMatches) {
-                        const potentialIndex = afterDate.indexOf(potentialScore);
-                        const beforePotentialScore = afterDate.substring(0, potentialIndex).trim();
-                        
-                        // Check if what comes before looks like a complete team name
-                        if (beforePotentialScore.match(/.*\s\d(\s*\([MF]\))?\s*$/) || 
-                            beforePotentialScore.match(/.*[a-zA-Z]\s*$/)) {
-                            scoreMatch = { 1: potentialScore };
-                            scoreIndex = potentialIndex;
-                            break;
-                        }
-                    }
-                }
-                
-                if (scoreMatch && scoreIndex >= 0) {
-                    fixture.Score = scoreMatch[1];
-                    const beforeScore = afterDate.substring(0, scoreIndex).trim();
-                    const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
-                    
-                    fixture.HomeTeam = beforeScore;
-                    const result = parseAwayTeamAndLocation(afterScore);
-                    fixture.AwayTeam = result.awayTeam;
-                    fixture.Location = result.location;
-                } else {
-                    fixture.Score = '';
-                    fixture.HomeTeam = afterDate;
-                    fixture.AwayTeam = '';
-                    fixture.Location = '';
-                }
-                
-                return fixture;
-            } catch (error) {
-                console.error('Error parsing chunk:', error);
-                return null;
-            }
-        }
-
-        // Helper function to extract date from chunk
-        function extractDateFromChunk(chunk) {
-            const dateMatch = chunk.match(/(\d{1,2}\s+\w{3}\s+\d{4})/);
-            return dateMatch ? dateMatch[1] : '';
-        }
-
-        // Separate function to parse away team and location
-        function parseAwayTeamAndLocation(text) {
-            console.log('Parsing away team/location from:', text);
-            
-            try {
-                // Check for Chelmsford home games first (most specific pattern)
-                const chelmsfordHomePattern = /^(.+?)(Chelmsford\s*HC\s*[-\s]*Chelmer\s*Park\s*[-\s]*Pitch\s*\d)$/i;
-                const chelmsfordHomeMatch = text.match(chelmsfordHomePattern);
-                
-                if (chelmsfordHomeMatch) {
-                    console.log('Chelmsford home game detected');
-                    return {
-                        awayTeam: chelmsfordHomeMatch[1].trim(),
-                        location: chelmsfordHomeMatch[2].trim()
-                    };
-                }
-                
-                // Alternative Chelmsford home pattern (in case spacing is different)
-                const chelmsfordHomePattern2 = /^(.+?)Chelmsford\s*HC(.*)$/i;
-                const chelmsfordHomeMatch2 = text.match(chelmsfordHomePattern2);
-                
-                if (chelmsfordHomeMatch2) {
-                    console.log('Alternative Chelmsford home pattern detected');
-                    const awayTeam = chelmsfordHomeMatch2[1].trim();
-                    const locationPart = chelmsfordHomeMatch2[2].trim();
-                    
-                    // Reconstruct the full location
-                    let location = 'Chelmsford HC' + (locationPart ? ' ' + locationPart : '');
-                    
-                    return {
-                        awayTeam: awayTeam,
-                        location: location
-                    };
-                }
-                
-                // Check for other specific venue patterns
-                const walthamForestPattern = /^(.+?)(Waltham\s*Forest\s*Hockey\s*Club.*)$/i;
-                const walthamMatch = text.match(walthamForestPattern);
-                
-                if (walthamMatch) {
-                    console.log('Waltham Forest venue detected');
-                    return {
-                        awayTeam: walthamMatch[1].trim(),
-                        location: walthamMatch[2].trim()
-                    };
-                }
-                
-                const becketKeysPattern = /^(.+?)(Becket\s*Keys\s*School.*)$/i;
-                const becketMatch = text.match(becketKeysPattern);
-                
-                if (becketMatch) {
-                    console.log('Becket Keys School detected');
-                    return {
-                        awayTeam: becketMatch[1].trim(),
-                        location: becketMatch[2].trim()
-                    };
-                }
-                
-                // Check for Chelmsford away teams
-                const chelmsfordAwayPattern = /^(.*?Chelmsford\s+\d(?:\s*\([MF]\))?)(.*)/i;
-                const chelmsfordAwayMatch = text.match(chelmsfordAwayPattern);
-                
-                if (chelmsfordAwayMatch) {
-                    console.log('Chelmsford away team detected');
-                    return {
-                        awayTeam: chelmsfordAwayMatch[1].trim(),
-                        location: chelmsfordAwayMatch[2].trim()
-                    };
-                }
-                
-                // Look for teams ending with single digits followed by location
-                const teamNumberPattern = /^(.*?\b\w+\s+\d)(.+)$/;
-                const teamNumberMatch = text.match(teamNumberPattern);
-                
-                if (teamNumberMatch) {
-                    const potentialTeam = teamNumberMatch[1].trim();
-                    const potentialLocation = teamNumberMatch[2].trim();
-                    
-                    // Check if the location part looks like a venue
-                    if (potentialLocation.length > 5 && 
-                        (potentialLocation.includes('HC') || 
-                         potentialLocation.includes('School') || 
-                         potentialLocation.includes('Club') ||
-                         potentialLocation.includes('Park') ||
-                         potentialLocation.includes('Pitch'))) {
-                        console.log('Team with number and venue detected');
-                        return {
-                            awayTeam: potentialTeam,
-                            location: potentialLocation
-                        };
-                    }
-                }
-                
-                // Look for special team suffixes
-                const teamSuffixPattern = /^(.*?\b(?:Development|Evergreens|Centurions)\b)(.*)$/i;
-                const teamSuffixMatch = text.match(teamSuffixPattern);
-                
-                if (teamSuffixMatch) {
-                    console.log('Team with suffix detected');
-                    return {
-                        awayTeam: teamSuffixMatch[1].trim(),
-                        location: teamSuffixMatch[2].trim()
-                    };
-                }
-                
-                // Fallback: look for any location-like words
-                const locationWords = ['Hockey', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground', 'HC'];
-                
-                for (const word of locationWords) {
-                    const wordIndex = text.indexOf(word);
-                    if (wordIndex > 3) { // Make sure there's some team name before it
-                        // Find the start of the word that contains this location indicator
-                        let wordStart = wordIndex;
-                        while (wordStart > 0 && text[wordStart - 1] !== ' ') {
-                            wordStart--;
-                        }
-                        
-                        const potentialTeam = text.substring(0, wordStart).trim();
-                        const potentialLocation = text.substring(wordStart).trim();
-                        
-                        if (potentialTeam.length > 2 && potentialLocation.length > 2) {
-                            console.log('Split by location word:', word);
-                            return {
-                                awayTeam: potentialTeam,
-                                location: potentialLocation
-                            };
-                        }
-                    }
-                }
-                
-                // Last resort: everything is away team
-                console.log('Using last resort - all as away team');
-                return {
-                    awayTeam: text,
-                    location: ''
-                };
-                
-            } catch (error) {
-                console.error('Error parsing away team/location:', error);
-                return {
-                    awayTeam: text,
-                    location: ''
-                };
-            }
-        }
-
-        // Extract sports data directly
-        function extractSportsData() {
-            return new Promise((resolve, reject) => {
-                const gmsWrapper = document.querySelector('.gms-wrapper');
-                
-                console.log('Extracting data directly from loaded content...');
-                console.log('GMS Wrapper content length:', gmsWrapper.textContent.length);
-                
-                try {
-                    const extractedData = parseGMSData(gmsWrapper);
-                    console.log('Extracted data:', extractedData);
-                    
-                    if (extractedData.length > 0) {
-                        resolve(extractedData);
-                    } else {
-                        reject(new Error('No data could be extracted from the content'));
-                    }
-                } catch (error) {
-                    console.error('Extraction error:', error);
-                    reject(error);
-                }
-            });
-        }
-
-        // Display data in preview table (with specific column order)
-        function displayData(data) {
-            if (data.length === 0) {
-                showStatus('No data found to display', 'error');
-                return;
-            }
-            
-            const preview = document.getElementById('dataPreview');
-            const header = document.getElementById('tableHeader');
-            const body = document.getElementById('tableBody');
-            
-            // Clear existing content
-            header.innerHTML = '';
-            body.innerHTML = '';
-            
-            // Define the desired column order
-            const desiredOrder = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
-            
-            // Get all available keys from the data
-            const allKeys = new Set();
-            data.forEach(row => {
-                Object.keys(row).forEach(key => {
-                    allKeys.add(key);
-                });
-            });
-            
-            // Create ordered keys list - desired order first, then any extras
-            const keys = [];
-            desiredOrder.forEach(key => {
-                if (allKeys.has(key)) {
-                    keys.push(key);
-                    allKeys.delete(key);
-                }
-            });
-            // Add any remaining keys that weren't in our desired order
-            keys.push(...Array.from(allKeys));
-            
-            // Create header
-            const headerRow = document.createElement('tr');
-            keys.forEach(key => {
-                const th = document.createElement('th');
-                th.textContent = key;
-                headerRow.appendChild(th);
-            });
-            header.appendChild(headerRow);
-            
-            // Create data rows
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                keys.forEach(key => {
-                    const td = document.createElement('td');
-                    td.textContent = row[key] || '';
-                    tr.appendChild(td);
-                });
-                body.appendChild(tr);
-            });
-            
-            preview.classList.remove('hidden');
-            showStatus(`Successfully loaded ${data.length} records`, 'success');
-        }
-
-        // Add table parsing function
-        function parseTableData(container) {
-            const data = [];
-            console.log('=== TABLE PARSING ===');
-            
-            const tables = container.querySelectorAll('table');
-            console.log('Tables found:', tables.length);
-            
-            tables.forEach((table, tableIndex) => {
-                console.log(`Processing table ${tableIndex}`);
-                const rows = table.querySelectorAll('tr');
-                console.log(`Table ${tableIndex} has ${rows.length} rows`);
-                
-                // Try to identify header row
-                let headers = [];
-                let dataStartRow = 0;
-                
-                if (rows.length > 0) {
-                    const firstRow = rows[0];
-                    const firstRowCells = firstRow.querySelectorAll('th, td');
-                    
-                    // Check if first row looks like headers
-                    const firstRowText = Array.from(firstRowCells).map(cell => cell.textContent.trim().toLowerCase());
-                    const hasHeaderWords = firstRowText.some(text => 
-                        text.includes('date') || text.includes('home') || text.includes('away') || 
-                        text.includes('score') || text.includes('location')
-                    );
-                    
-                    if (hasHeaderWords) {
-                        headers = Array.from(firstRowCells).map(cell => cell.textContent.trim());
-                        dataStartRow = 1;
-                        console.log('Headers found:', headers);
-                    } else {
-                        // Use default headers
-                        headers = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
-                        dataStartRow = 0;
-                        console.log('Using default headers:', headers);
-                    }
-                }
-                
-                // Process data rows
-                for (let i = dataStartRow; i < rows.length; i++) {
-                    const row = rows[i];
-                    const cells = row.querySelectorAll('td, th');
-                    console.log(`Row ${i} has ${cells.length} cells`);
-                    
-                    if (cells.length > 0) {
-                        const rowData = {};
-                        
-                        Array.from(cells).forEach((cell, cellIndex) => {
-                            const cellText = cell.textContent.trim();
-                            const header = headers[cellIndex] || `Column_${cellIndex + 1}`;
-                            
-                            if (cellText) {
-                                rowData[header] = cellText;
-                            }
-                        });
-                        
-                        // Only add if we have meaningful data
-                        const hasData = Object.values(rowData).some(val => val && val.length > 0);
-                        if (hasData) {
-                            console.log(`Adding table row data:`, rowData);
-                            data.push(rowData);
-                        }
-                    }
-                }
-            });
-            
-            console.log('Table parsing complete. Found:', data.length, 'records');
-            return data;
-        }
-        function convertToCSV(data) {
-            if (data.length === 0) return '';
-            
-            // Define the desired column order
-            const desiredOrder = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location'];
-            
-            // Get all available keys from the data
-            const allKeys = new Set();
-            data.forEach(row => {
-                Object.keys(row).forEach(key => {
-                    allKeys.add(key);
-                });
-            });
-            
-            // Create ordered keys list - desired order first, then any extras
-            const keys = [];
-            desiredOrder.forEach(key => {
-                if (allKeys.has(key)) {
-                    keys.push(key);
-                    allKeys.delete(key);
-                }
-            });
-            // Add any remaining keys that weren't in our desired order
-            keys.push(...Array.from(allKeys));
-            
-            // Create CSV header
-            let csv = keys.map(key => `"${key}"`).join(',') + '\n';
-            
-            // Add data rows
-            data.forEach(row => {
-                const values = keys.map(key => {
-                    const value = row[key] || '';
-                    // Escape quotes and wrap in quotes
-                    return `"${String(value).replace(/"/g, '""')}"`;
-                });
-                csv += values.join(',') + '\n';
-            });
-            
-            return csv;
-        }
-
-        // Download CSV file
-        function downloadCSV(csvContent, filename = 'sports_data.csv') {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute('href', url);
-                link.setAttribute('download', filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
-
-        // Event listeners
-        document.getElementById('loadData').addEventListener('click', async () => {
-            showStatus('Extracting sports data...', 'info');
-            document.getElementById('exportCSV').disabled = true;
-            
-            try {
-                sportsData = await extractSportsData();
-                displayData(sportsData);
-                document.getElementById('exportCSV').disabled = false;
-                dataLoaded = true;
-            } catch (error) {
-                showStatus(`Error loading data: ${error.message}`, 'error');
-                console.error('Error:', error);
-            }
-        });
-
-        document.getElementById('exportCSV').addEventListener('click', () => {
-            if (sportsData.length === 0) {
-                showStatus('No data to export', 'error');
-                return;
-            }
-            
-            const csv = convertToCSV(sportsData);
-            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-            downloadCSV(csv, `sports_club_data_${timestamp}.csv`);
-            showStatus('CSV file downloaded successfully', 'success');
-        });
-
-        document.getElementById('clearData').addEventListener('click', () => {
-            sportsData = [];
-            document.getElementById('dataPreview').classList.add('hidden');
-            document.getElementById('status').classList.add('hidden');
-            document.getElementById('exportCSV').disabled = true;
-            dataLoaded = false;
-            
-            // Reload the page to reset everything
-            showStatus('Clearing data and reloading...', 'info');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        });
-
-        // Enhanced debug button with detailed content inspection
-        const debugButton = document.createElement('button');
-        debugButton.textContent = 'Debug: Extract Current Content';
-        debugButton.className = 'btn-secondary';
-        debugButton.onclick = () => {
-            const gmsWrapper = document.querySelector('.gms-wrapper');
-            console.log('=== DETAILED DEBUG INSPECTION ===');
-            console.log('HTML Content length:', gmsWrapper.innerHTML.length);
-            console.log('Text Content length:', gmsWrapper.textContent.length);
-            console.log('Full HTML content:', gmsWrapper.innerHTML);
-            console.log('Full text content:', gmsWrapper.textContent);
-            
-            // Check for tables
-            const tables = gmsWrapper.querySelectorAll('table');
-            console.log('Tables found:', tables.length);
-            tables.forEach((table, index) => {
-                console.log(`Table ${index} content:`, table.outerHTML);
-                console.log(`Table ${index} text:`, table.textContent);
-            });
-            
-            // Check for divs
-            const divs = gmsWrapper.querySelectorAll('div');
-            console.log('Divs found:', divs.length);
-            divs.forEach((div, index) => {
-                if (div.textContent.trim().length > 10) {
-                    console.log(`Div ${index} content:`, div.textContent.trim());
-                }
-            });
-            
-            // Check for spans
-            const spans = gmsWrapper.querySelectorAll('span');
-            console.log('Spans found:', spans.length);
-            spans.forEach((span, index) => {
-                if (span.textContent.trim().length > 5) {
-                    console.log(`Span ${index} content:`, span.textContent.trim());
-                }
-            });
-            
-            // Check for any elements with text
-            const allElements = gmsWrapper.querySelectorAll('*');
-            console.log('All elements found:', allElements.length);
-            allElements.forEach((element, index) => {
-                const text = element.textContent.trim();
-                if (text.length > 20 && !text.includes('Loading sports data')) {
-                    console.log(`Element ${index} (${element.tagName}):`, text.substring(0, 100));
-                }
-            });
-            
-            // Try different parsing approaches
-            console.log('=== TRYING DIFFERENT PARSING APPROACHES ===');
-            
-            // Approach 1: Try table parsing
-            if (tables.length > 0) {
-                console.log('Trying table parsing...');
-                try {
-                    const tableData = parseTableData(gmsWrapper);
-                    console.log('Table parsing result:', tableData);
-                    if (tableData.length > 0) {
-                        sportsData = tableData;
-                        displayData(tableData);
-                        document.getElementById('exportCSV').disabled = false;
-                        showStatus(`Table parsing successful! Found ${tableData.length} items.`, 'success');
-                        return;
-                    }
-                } catch (error) {
-                    console.error('Table parsing failed:', error);
-                }
-            }
-            
-            // Approach 2: Try raw text parsing
-            console.log('Trying raw text parsing...');
-            try {
-                const debugData = parseGMSData(gmsWrapper);
-                console.log('Raw text parsing result:', debugData);
-                if (debugData.length > 0) {
-                    sportsData = debugData;
-                    displayData(debugData);
-                    document.getElementById('exportCSV').disabled = false;
-                    showStatus(`Raw text parsing successful! Found ${debugData.length} items.`, 'success');
-                    return;
-                }
-            } catch (error) {
-                console.error('Raw text parsing failed:', error);
-            }
-            
-            // Approach 3: Create manual data from whatever we find
-            console.log('Creating manual data structure...');
-            const manualData = [];
-            const allText = gmsWrapper.textContent.trim();
-            
-            if (allText.length > 50) {
-                // Split into chunks and create records
-                const chunks = allText.split(/(?=\d{1,2}\s+\w{3}\s+\d{4})/);
-                chunks.forEach((chunk, index) => {
-                    if (chunk.trim().length > 20) {
-                        manualData.push({
-                            ChunkNumber: index + 1,
-                            RawContent: chunk.trim().substring(0, 200),
-                            FullContent: chunk.trim()
-                        });
-                    }
-                });
-            }
-            
-            if (manualData.length > 0) {
-                sportsData = manualData;
-                displayData(manualData);
-                document.getElementById('exportCSV').disabled = false;
-                showStatus(`Manual parsing created ${manualData.length} records for inspection.`, 'info');
+    function parseMatchData(rawText) {
+      const matches = [];
+      console.log('=== STARTING ENHANCED PARSE ===');
+      
+      // Split text into lines for processing
+      const lines = rawText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      console.log('Text lines found:', lines.length);
+      
+      // Process each line looking for fixture data
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        console.log(`Processing line ${i}: ${line}`);
+        
+        // Look for date pattern at start of line
+        const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/;
+        const dateMatch = line.match(datePattern);
+        
+        if (dateMatch) {
+          console.log('Found date:', dateMatch[1]);
+          const match = { 
+            Date: dateMatch[1],
+            HomeTeam: '',
+            AwayTeam: '',
+            Score: '',
+            Location: '',
+            Outcome: '',
+            Walkover: false
+          };
+          
+          // Get text after the date
+          let afterDate = line.substring(line.indexOf(dateMatch[1]) + dateMatch[1].length).trim();
+          console.log('After date:', afterDate);
+          
+          // Check for walkover
+          if (afterDate.toLowerCase().includes('walkover')) {
+            match.Walkover = true;
+            match.Outcome = 'Walkover';
+            // Extract teams from walkover text
+            const walkoverMatch = afterDate.match(/walkover.*?([^-]+)\s+vs?\s+([^-]+)/i);
+            if (walkoverMatch) {
+              match.HomeTeam = walkoverMatch[1].trim();
+              match.AwayTeam = walkoverMatch[2].trim();
             } else {
-                showStatus('No data could be extracted by any method - check console for full details', 'error');
+              match.HomeTeam = afterDate.replace(/walkover/i, '').trim();
             }
+          } else {
+            // Look for score pattern
+            const scoreMatches = afterDate.match(/(\d{1,2}\s*:\s*\d{1,2})/g);
+            let scoreMatch = null;
+            let scoreIndex = -1;
+            
+            if (scoreMatches) {
+              // Find the score that looks most like an actual match score
+              for (const potentialScore of scoreMatches) {
+                const potentialIndex = afterDate.indexOf(potentialScore);
+                const beforePotentialScore = afterDate.substring(0, potentialIndex).trim();
+                
+                // Check if what comes before looks like a complete team name
+                if (beforePotentialScore.match(/.*\s\d(\s*\([MF]\))?\s*$/) || 
+                    beforePotentialScore.match(/.*[a-zA-Z]\s*$/)) {
+                  scoreMatch = { 1: potentialScore };
+                  scoreIndex = potentialIndex;
+                  break;
+                }
+              }
+            }
+            
+            if (scoreMatch && scoreIndex >= 0) {
+              console.log('Found valid score:', scoreMatch[1]);
+              match.Score = scoreMatch[1];
+              
+              // Split by score using the exact position
+              const beforeScore = afterDate.substring(0, scoreIndex).trim();
+              const afterScore = afterDate.substring(scoreIndex + scoreMatch[1].length).trim();
+              
+              console.log('Before score (home team):', beforeScore);
+              console.log('After score (away + location):', afterScore);
+              
+              match.HomeTeam = beforeScore;
+              
+              // Parse away team and location
+              const result = parseAwayTeamAndLocation(afterScore);
+              match.AwayTeam = result.awayTeam;
+              match.Location = result.location;
+              
+              // Determine outcome
+              match.Outcome = determineOutcome(match.Score, match.HomeTeam, match.AwayTeam);
+            } else {
+              // No score - might be a future fixture
+              match.HomeTeam = afterDate;
+              match.Outcome = 'Fixture (No Score)';
+            }
+          }
+          
+          console.log('Final match:', match);
+          matches.push(match);
+        }
+      }
+      
+      // If no date-based parsing worked, try the original simple approach
+      if (matches.length === 0) {
+        console.log('No date-based matches found, trying simple parsing...');
+        return parseDataSimple(rawText);
+      }
+      
+      console.log('=== ENHANCED PARSE COMPLETE ===');
+      console.log('Total matches found:', matches.length);
+      return matches;
+    }
+
+    // Fallback to original simple parsing
+    function parseDataSimple(raw) {
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const matches = [];
+      let currentMatch = {};
+      const datePattern = /^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}$/;
+      const scorePattern = /^\d+\s*:\s*\d+$/;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (datePattern.test(line)) {
+          // Save previous match if complete
+          if (Object.keys(currentMatch).length > 0) {
+            matches.push(formatMatch(currentMatch));
+          }
+          currentMatch = { Date: line, Walkover: false };
+        } else if (scorePattern.test(line)) {
+          currentMatch.Score = line;
+        } else if (line.toLowerCase().includes("walkover")) {
+          currentMatch.Walkover = true;
+        } else if (!currentMatch.HomeTeam) {
+          currentMatch.HomeTeam = line;
+        } else if (!currentMatch.AwayTeam && !currentMatch.Score) {
+          currentMatch.AwayTeam = line;
+        } else if (!currentMatch.AwayTeam && currentMatch.Score) {
+          currentMatch.AwayTeam = line;
+        } else {
+          currentMatch.Location = line;
+        }
+      }
+      
+      // Push last match if exists
+      if (Object.keys(currentMatch).length > 0) {
+        matches.push(formatMatch(currentMatch));
+      }
+      
+      return matches;
+    }
+
+    function formatMatch(match) {
+      const formatted = {
+        Date: match.Date || '',
+        HomeTeam: match.HomeTeam || '',
+        AwayTeam: match.AwayTeam || '',
+        Score: match.Score || '',
+        Location: match.Location || '',
+        Walkover: match.Walkover || false,
+        Outcome: ''
+      };
+      
+      if (match.Walkover) {
+        formatted.Outcome = "Walkover";
+      } else if (match.Score) {
+        formatted.Outcome = determineOutcome(match.Score, match.HomeTeam, match.AwayTeam);
+      } else {
+        formatted.Outcome = 'Fixture (No Score)';
+      }
+      
+      return formatted;
+    }
+
+    function determineOutcome(score, homeTeam, awayTeam) {
+      if (!score) return '';
+      
+      const scoreParts = score.split(':').map(n => parseInt(n.trim()));
+      if (scoreParts.length !== 2 || scoreParts.some(isNaN)) return '';
+      
+      const [homeScore, awayScore] = scoreParts;
+      if (homeScore > awayScore) {
+        return `${homeTeam} won (${homeScore}-${awayScore})`;
+      } else if (homeScore < awayScore) {
+        return `${awayTeam} won (${homeScore}-${awayScore})`;
+      } else {
+        return `Draw (${homeScore}-${awayScore})`;
+      }
+    }
+
+    // Parse away team and location using enhanced logic
+    function parseAwayTeamAndLocation(text) {
+      console.log('Parsing away team/location from:', text);
+      
+      try {
+        // Check for specific venue patterns first
+        const chelmsfordHomePattern = /^(.+?)(Chelmsford\s*HC\s*[-\s]*Chelmer\s*Park\s*[-\s]*Pitch\s*\d)$/i;
+        const chelmsfordMatch = text.match(chelmsfordHomePattern);
+        
+        if (chelmsfordMatch) {
+          return {
+            awayTeam: chelmsfordMatch[1].trim(),
+            location: chelmsfordMatch[2].trim()
+          };
+        }
+        
+        // Look for other venue patterns
+        const venuePatterns = [
+          /^(.+?)(Waltham\s*Forest\s*Hockey\s*Club.*)$/i,
+          /^(.+?)(Becket\s*Keys\s*School.*)$/i,
+          /^(.+?)(\w+\s*HC\s*[-\s]*\w+.*)$/i
+        ];
+        
+        for (const pattern of venuePatterns) {
+          const match = text.match(pattern);
+          if (match) {
+            return {
+              awayTeam: match[1].trim(),
+              location: match[2].trim()
+            };
+          }
+        }
+        
+        // Look for teams ending with digits followed by location
+        const teamNumberPattern = /^(.*?\b\w+\s+\d)(.+)$/;
+        const teamMatch = text.match(teamNumberPattern);
+        
+        if (teamMatch) {
+          const potentialTeam = teamMatch[1].trim();
+          const potentialLocation = teamMatch[2].trim();
+          
+          // Check if location part looks like a venue
+          if (potentialLocation.length > 5 && 
+              (potentialLocation.includes('HC') || 
+               potentialLocation.includes('School') || 
+               potentialLocation.includes('Club') ||
+               potentialLocation.includes('Park') ||
+               potentialLocation.includes('Pitch'))) {
+            return {
+              awayTeam: potentialTeam,
+              location: potentialLocation
+            };
+          }
+        }
+        
+        // Fallback: split by common location words
+        const locationWords = ['Hockey', 'School', 'Club', 'Park', 'Pitch', 'Centre', 'Ground', 'HC'];
+        
+        for (const word of locationWords) {
+          const wordIndex = text.indexOf(word);
+          if (wordIndex > 3) {
+            let wordStart = wordIndex;
+            while (wordStart > 0 && text[wordStart - 1] !== ' ') {
+              wordStart--;
+            }
+            
+            const potentialTeam = text.substring(0, wordStart).trim();
+            const potentialLocation = text.substring(wordStart).trim();
+            
+            if (potentialTeam.length > 2 && potentialLocation.length > 2) {
+              return {
+                awayTeam: potentialTeam,
+                location: potentialLocation
+              };
+            }
+          }
+        }
+        
+        // Last resort: everything is away team
+        return {
+          awayTeam: text,
+          location: ''
         };
         
-        document.querySelector('.controls').appendChild(debugButton);
+      } catch (error) {
+        console.error('Error parsing away team/location:', error);
+        return {
+          awayTeam: text,
+          location: ''
+        };
+      }
+    }
 
-        // Check if data is already loaded when page loads
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const gmsWrapper = document.querySelector('.gms-wrapper');
-                const hasData = gmsWrapper.textContent.trim().length > 50 && 
-                               !gmsWrapper.textContent.includes('Loading sports data...');
-                
-                if (hasData) {
-                    showStatus('Sports data appears to be loaded. Click "Load Sports Data" to extract it.', 'info');
-                } else {
-                    showStatus('Waiting for sports data to load...', 'info');
-                }
-                
-                console.log('Page loaded. Current content length:', gmsWrapper.textContent.length);
-                console.log('Has data:', hasData);
-            }, 2000);
+    function displayMatches(matches) {
+      // Display as table
+      const tableView = document.getElementById('tableView');
+      const header = document.getElementById('tableHeader');
+      const body = document.getElementById('tableBody');
+      
+      // Clear existing content
+      header.innerHTML = '';
+      body.innerHTML = '';
+      
+      if (matches.length > 0) {
+        // Create header
+        const headerRow = document.createElement('tr');
+        const keys = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location', 'Outcome'];
+        keys.forEach(key => {
+          const th = document.createElement('th');
+          th.textContent = key.replace(/([A-Z])/g, ' $1').trim();
+          headerRow.appendChild(th);
         });
-    </script>
+        header.appendChild(headerRow);
+        
+        // Create data rows
+        matches.forEach(match => {
+          const tr = document.createElement('tr');
+          keys.forEach(key => {
+            const td = document.createElement('td');
+            td.textContent = match[key] || '';
+            tr.appendChild(td);
+          });
+          body.appendChild(tr);
+        });
+        
+        tableView.classList.remove('hidden');
+      }
+      
+      // Also display as JSON
+      document.getElementById("jsonOutput").textContent = JSON.stringify(matches, null, 2);
+    }
+
+    function exportCSV() {
+      if (parsedMatches.length === 0) {
+        showStatus('No data to export', 'error');
+        return;
+      }
+      
+      const keys = ['Date', 'HomeTeam', 'Score', 'AwayTeam', 'Location', 'Outcome'];
+      
+      // Create CSV header
+      let csv = keys.map(key => `"${key}"`).join(',') + '\n';
+      
+      // Add data rows
+      parsedMatches.forEach(match => {
+        const values = keys.map(key => {
+          const value = match[key] || '';
+          return `"${String(value).replace(/"/g, '""')}"`;
+        });
+        csv += values.join(',') + '\n';
+      });
+      
+      // Download CSV
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `match_data_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showStatus('CSV exported successfully', 'success');
+    }
+
+    function clearData() {
+      document.getElementById('rawData').value = '';
+      document.getElementById('jsonOutput').textContent = '';
+      document.getElementById('tableView').classList.add('hidden');
+      document.getElementById('status').classList.add('hidden');
+      document.getElementById('exportBtn').disabled = true;
+      parsedMatches = [];
+    }
+  </script>
 </body>
 </html>

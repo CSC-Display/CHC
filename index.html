@@ -172,93 +172,34 @@
         function parseMatches(rawData) {
             console.log("Raw data received:", rawData.substring(0, 500));
             
-            // Handle GMS feed format - look for patterns in the continuous text
-            // Pattern: Date Time Home Team Away Team Venue
-            // Example: "27 Sep 202510:00Chelmsford 4Crostyx 2Chelmsford HC - Chelmer Park - Pitch 1"
+            const matches = [];
             
-            let matches = [];
+            // Regex to capture: date, time, teamA, scoreA, scoreB, teamB, venue
+            const regex = /(\d{2} \w{3} \d{4})(\d{2}:\d{2})([A-Za-z &]+ \d+)\s(\d+) : (\d+)([A-Za-z &]+ \d+)([^\n]*)/g;
+            let match;
             
-            // First, try to split by date patterns
-            const datePattern = /(\d{1,2}\s+\w{3}\s+\d{4})/g;
-            const parts = rawData.split(datePattern).filter(part => part.trim());
-            
-            for (let i = 0; i < parts.length - 1; i += 2) {
-                const date = parts[i].trim();
-                const matchData = parts[i + 1].trim();
+            while ((match = regex.exec(rawData)) !== null) {
+                let notes = "";
+                let venue = match[7].trim();
                 
-                if (!matchData) continue;
-                
-                // Extract time (e.g., "10:00", "11:30")
-                const timeMatch = matchData.match(/^(\d{1,2}:\d{2})/);
-                const time = timeMatch ? timeMatch[1] : "";
-                
-                // Remove time from match data
-                let rest = matchData.replace(time, "").trim();
-                
-                // Look for team names and scores
-                // Pattern: TeamName Number TeamName Number Venue
-                const teamScorePattern = /^(.+?)\s+(\d+)(.+?)\s+(\d+)(.+)$/;
-                const match = rest.match(teamScorePattern);
-                
-                if (match) {
-                    const homeTeam = match[1].trim();
-                    const homeScore = match[2];
-                    const awayTeam = match[3].trim();
-                    const awayScore = match[4];
-                    const venue = match[5].trim();
-                    
-                    let notes = "";
-                    let cleanVenue = venue;
-                    
-                    // Check for special cases
-                    if (venue.includes("Walkover")) {
-                        notes = "Walkover";
-                        cleanVenue = venue.replace("Walkover", "").trim();
-                    }
-                    
-                    matches.push({
-                        date: date,
-                        time: time,
-                        homeTeam: homeTeam,
-                        score: `${homeScore}:${awayScore}`,
-                        awayTeam: awayTeam,
-                        venue: cleanVenue,
-                        notes: notes
-                    });
-                } else {
-                    console.log("Could not parse match data:", rest);
+                // Check for special cases like Walkover
+                if (venue.includes("Walkover")) {
+                    notes = "Walkover";
+                    venue = venue.replace("Walkover", "").trim();
                 }
-            }
-            
-            // If no matches found with the above method, try alternative parsing
-            if (matches.length === 0) {
-                console.log("Trying alternative parsing method...");
                 
-                // Look for patterns like "Team Name NumberTeam Name Number"
-                const alternativePattern = /(\d{1,2}\s+\w{3}\s+\d{4})(\d{1,2}:\d{2})(.+?)(?=\d{1,2}\s+\w{3}\s+\d{4}|$)/g;
-                let match;
-                
-                while ((match = alternativePattern.exec(rawData)) !== null) {
-                    const date = match[1].trim();
-                    const time = match[2];
-                    const matchInfo = match[3].trim();
-                    
-                    // Try to extract teams and scores from the match info
-                    const teamPattern = /^(.+?)\s+(\d+)(.+?)\s+(\d+)(.*)$/;
-                    const teamMatch = matchInfo.match(teamPattern);
-                    
-                    if (teamMatch) {
-                        matches.push({
-                            date: date,
-                            time: time,
-                            homeTeam: teamMatch[1].trim(),
-                            score: `${teamMatch[2]}:${teamMatch[4]}`,
-                            awayTeam: teamMatch[3].trim(),
-                            venue: teamMatch[5].trim(),
-                            notes: ""
-                        });
-                    }
-                }
+                matches.push({
+                    date: match[1].trim(),
+                    time: match[2].trim(),
+                    homeTeam: match[3].trim(),
+                    score: `${match[4]}:${match[5]}`,
+                    awayTeam: match[6].trim(),
+                    venue: venue,
+                    notes: notes,
+                    // Also store individual scores for CSV export
+                    homeScore: parseInt(match[4], 10),
+                    awayScore: parseInt(match[5], 10)
+                });
             }
             
             console.log("Parsed matches:", matches);

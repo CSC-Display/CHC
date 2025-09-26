@@ -9,6 +9,8 @@
     <h1>Club Fixtures</h1>
     
     <button id="exportBtn" onclick="exportTableToCSV()">Export</button>
+    <button id="homeBtn" onclick="filterHome()">Home</button>
+    <button id="defaultBtn" onclick="resetToDefault()">Default</button>
     
     <div class="gms-wrapper gms-ajax" 
          data-method="api" 
@@ -55,6 +57,48 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+            }
+        }
+        
+        function filterHome() {
+            const wrapper = document.querySelector('.gms-wrapper');
+            const currentOptions = wrapper.getAttribute('data-options');
+            
+            // Check if filter:home is already applied
+            if (currentOptions.includes('filter:home')) {
+                // Remove the filter
+                const newOptions = currentOptions.replace(',filter:home', '').replace('filter:home,', '').replace('filter:home', '');
+                wrapper.setAttribute('data-options', newOptions);
+                document.getElementById('homeBtn').textContent = 'Home';
+            } else {
+                // Add the filter
+                wrapper.setAttribute('data-options', currentOptions + ',filter:home');
+                document.getElementById('homeBtn').textContent = 'Show All';
+            }
+            
+            // Reload the data (if GMS API supports it)
+            if (typeof window.gmsReload === 'function') {
+                window.gmsReload();
+            } else {
+                // Fallback: reload the page
+                location.reload();
+            }
+        }
+        
+        function resetToDefault() {
+            const wrapper = document.querySelector('.gms-wrapper');
+            // Reset to original API call options
+            wrapper.setAttribute('data-options', 'showGender:yes');
+            
+            // Reset home button text
+            document.getElementById('homeBtn').textContent = 'Home';
+            
+            // Reload the data (if GMS API supports it)
+            if (typeof window.gmsReload === 'function') {
+                window.gmsReload();
+            } else {
+                // Fallback: reload the page
+                location.reload();
             }
         }
     </script>

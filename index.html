@@ -31,34 +31,35 @@
     
     <script>
         function loadDefault() {
-            const wrapper = document.querySelector('.gms-wrapper');
-            wrapper.innerHTML = '';
-            wrapper.setAttribute('data-method', 'api');
-            wrapper.setAttribute('data-show', 'results');
-            wrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
-            wrapper.setAttribute('data-whatson', '7');
-            wrapper.setAttribute('data-sort_by', 'fixtureTime');
-            wrapper.setAttribute('data-options', 'showGender:yes');
-            wrapper.removeAttribute('data-filter');
-            // Reinitialize the API call
-            if (window.gmsapi) {
-                window.gmsapi.refresh();
-            }
+            const container = document.querySelector('.gms-wrapper').parentNode;
+            const oldWrapper = document.querySelector('.gms-wrapper');
+            const newWrapper = document.createElement('div');
+            
+            newWrapper.className = 'gms-wrapper gms-ajax';
+            newWrapper.setAttribute('data-method', 'api');
+            newWrapper.setAttribute('data-show', 'results');
+            newWrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
+            newWrapper.setAttribute('data-whatson', '7');
+            newWrapper.setAttribute('data-sort_by', 'fixtureTime');
+            newWrapper.setAttribute('data-options', 'showGender:yes');
+            
+            container.replaceChild(newWrapper, oldWrapper);
         }
         
         function loadHome() {
-            const wrapper = document.querySelector('.gms-wrapper');
-            wrapper.innerHTML = '';
-            wrapper.setAttribute('data-method', 'api');
-            wrapper.setAttribute('data-show', 'results');
-            wrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
-            wrapper.setAttribute('data-whatson', '7');
-            wrapper.setAttribute('data-sort_by', 'fixtureTime');
-            wrapper.setAttribute('data-options', 'showGender:yes,filter:home');
-            // Reinitialize the API call
-            if (window.gmsapi) {
-                window.gmsapi.refresh();
-            }
+            const container = document.querySelector('.gms-wrapper').parentNode;
+            const oldWrapper = document.querySelector('.gms-wrapper');
+            const newWrapper = document.createElement('div');
+            
+            newWrapper.className = 'gms-wrapper gms-ajax';
+            newWrapper.setAttribute('data-method', 'api');
+            newWrapper.setAttribute('data-show', 'results');
+            newWrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
+            newWrapper.setAttribute('data-whatson', '7');
+            newWrapper.setAttribute('data-sort_by', 'fixtureTime');
+            newWrapper.setAttribute('data-options', 'showGender:yes,filter:home');
+            
+            container.replaceChild(newWrapper, oldWrapper);
         }
     </script>
 </body>

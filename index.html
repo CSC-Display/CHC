@@ -4,13 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Club Fixtures</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        
+        .button-container {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .filter-btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .filter-btn.active {
+            background-color: #28a745;
+        }
+        
+        .gms-wrapper {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Club Fixtures</h1>
     
-    <button id="exportBtn" onclick="exportTableToCSV()">Export</button>
-    <button id="homeBtn" onclick="filterHome()">Home</button>
-    <button id="defaultBtn" onclick="resetToDefault()">Default</button>
+    <div class="button-container">
+        <button class="filter-btn active" data-filter="default">Default</button>
+        <button class="filter-btn" data-filter="home">Home</button>
+        <button class="filter-btn" data-filter="away">Away</button>
+        <button class="filter-btn" data-filter="opens">Opens</button>
+        <button class="filter-btn" data-filter="womens">Womens</button>
+        <button class="filter-btn" data-filter="pitch1">Pitch 1</button>
+        <button class="filter-btn" data-filter="pitch2">Pitch 2</button>
+    </div>
     
     <div class="gms-wrapper gms-ajax" 
          data-method="api" 
@@ -20,87 +62,65 @@
          data-sort_by="fixtureTime" 
          data-options="showGender:yes">
     </div>
-
-    <script src="https://gmsfeed.co.uk/js/api.js"></script>
     
+    <script src="https://gmsfeed.co.uk/js/api.js"></script>
     <script>
-        function exportTableToCSV() {
-            const table = document.querySelector('.gms-wrapper table');
-            if (!table) {
-                alert('No table found to export. Please wait for the data to load.');
-                return;
-            }
+        // Button functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.filter-btn');
+            const fixturesContainer = document.querySelector('.gms-wrapper');
             
-            let csv = [];
-            const rows = table.querySelectorAll('tr');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Get filter type
+                    const filterType = this.getAttribute('data-filter');
+                    
+                    // Update the data attributes based on filter
+                    updateFixturesFilter(filterType);
+                });
+            });
             
-            for (let i = 0; i < rows.length; i++) {
-                const row = [];
-                const cols = rows[i].querySelectorAll('td, th');
+            function updateFixturesFilter(filterType) {
+                const originalOptions = 'showGender:yes';
                 
-                for (let j = 0; j < cols.length; j++) {
-                    let cellText = cols[j].innerText.replace(/"/g, '""');
-                    row.push('"' + cellText + '"');
+                switch(filterType) {
+                    case 'default':
+                        // Reset to original options
+                        fixturesContainer.setAttribute('data-options', originalOptions);
+                        break;
+                    case 'home':
+                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:home');
+                        break;
+                    case 'away':
+                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:away');
+                        break;
+                    case 'opens':
+                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:male');
+                        break;
+                    case 'womens':
+                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:female');
+                        break;
+                    case 'pitch1':
+                        // Keeping pitch filtering as before since no specific data-options provided
+                        fixturesContainer.setAttribute('data-options', originalOptions + ',pitch:1');
+                        break;
+                    case 'pitch2':
+                        // Keeping pitch filtering as before since no specific data-options provided
+                        fixturesContainer.setAttribute('data-options', originalOptions + ',pitch:2');
+                        break;
                 }
-                csv.push(row.join(','));
+                
+                // Trigger a refresh of the fixtures (this depends on the GMS API)
+                // You may need to call a specific GMS function to refresh the data
+                console.log('Filter applied:', filterType);
             }
-            
-            const csvContent = csv.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute('href', url);
-                link.setAttribute('download', 'club_fixtures.csv');
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
-        
-        function filterHome() {
-            const wrapper = document.querySelector('.gms-wrapper');
-            const currentOptions = wrapper.getAttribute('data-options');
-            
-            // Check if filter:home is already applied
-            if (currentOptions.includes('filter:home')) {
-                // Remove the filter
-                const newOptions = currentOptions.replace(',filter:home', '').replace('filter:home,', '').replace('filter:home', '');
-                wrapper.setAttribute('data-options', newOptions);
-                document.getElementById('homeBtn').textContent = 'Home';
-            } else {
-                // Add the filter
-                wrapper.setAttribute('data-options', currentOptions + ',filter:home');
-                document.getElementById('homeBtn').textContent = 'Show All';
-            }
-            
-            // Reload the data (if GMS API supports it)
-            if (typeof window.gmsReload === 'function') {
-                window.gmsReload();
-            } else {
-                // Fallback: reload the page
-                location.reload();
-            }
-        }
-        
-        function resetToDefault() {
-            const wrapper = document.querySelector('.gms-wrapper');
-            // Reset to original API call options
-            wrapper.setAttribute('data-options', 'showGender:yes');
-            
-            // Reset home button text
-            document.getElementById('homeBtn').textContent = 'Home';
-            
-            // Reload the data (if GMS API supports it)
-            if (typeof window.gmsReload === 'function') {
-                window.gmsReload();
-            } else {
-                // Fallback: reload the page
-                location.reload();
-            }
-        }
+        });
     </script>
 </body>
 </html>

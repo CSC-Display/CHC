@@ -83,7 +83,27 @@
                     
                     // Update the data attributes based on filter
                     updateFixturesFilter(filterType);
-                });
+                }
+            
+            function refreshGMSFeed() {
+                // Clear the current content
+                fixturesContainer.innerHTML = '';
+                
+                // Re-initialize the GMS feed with new parameters
+                if (typeof window.GMS !== 'undefined' && window.GMS.init) {
+                    // If GMS has an init function, call it
+                    window.GMS.init();
+                } else if (typeof window.gmsInit === 'function') {
+                    // Alternative init function name
+                    window.gmsInit();
+                } else {
+                    // Fallback: trigger a page reload of just the GMS content
+                    // This creates a new script element to re-trigger the API call
+                    const script = document.createElement('script');
+                    script.src = 'https://gmsfeed.co.uk/js/api.js?t=' + Date.now();
+                    document.body.appendChild(script);
+                }
+            });
             });
             
             function updateFixturesFilter(filterType) {
@@ -116,8 +136,8 @@
                         break;
                 }
                 
-                // Trigger a refresh of the fixtures (this depends on the GMS API)
-                // You may need to call a specific GMS function to refresh the data
+                // Refresh the GMS API call
+                refreshGMSFeed();
                 console.log('Filter applied:', filterType);
             }
         });

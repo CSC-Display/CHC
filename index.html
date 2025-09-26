@@ -3,55 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Fixtures</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        
-        .button-container {
-            margin: 20px 0;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-btn {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        
-        .filter-btn:hover {
-            background-color: #0056b3;
-        }
-        
-        .filter-btn.active {
-            background-color: #28a745;
-        }
-        
-        .gms-wrapper {
-            margin-top: 20px;
-        }
-    </style>
+    <title>Club Fixtures & Events</title>
 </head>
 <body>
-    <h1>Club Fixtures</h1>
+    <h1>Club Fixtures & Events</h1>
     
-    <div class="button-container">
-        <button class="filter-btn active" data-filter="default">Default</button>
-        <button class="filter-btn" data-filter="home">Home</button>
-        <button class="filter-btn" data-filter="away">Away</button>
-        <button class="filter-btn" data-filter="opens">Opens</button>
-        <button class="filter-btn" data-filter="womens">Womens</button>
-        <button class="filter-btn" data-filter="pitch1">Pitch 1</button>
-        <button class="filter-btn" data-filter="pitch2">Pitch 2</button>
+    <div>
+        <button onclick="loadDefault()">Default</button>
+        <button onclick="loadHome()">Home</button>
+        <button>Away</button>
+        <button>Opens</button>
+        <button>Womens</button>
+        <button>Pitch 1</button>
+        <button>Pitch 2</button>
     </div>
     
     <div class="gms-wrapper gms-ajax" 
@@ -64,83 +28,38 @@
     </div>
     
     <script src="https://gmsfeed.co.uk/js/api.js"></script>
+    
     <script>
-        // Button functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const buttons = document.querySelectorAll('.filter-btn');
-            const fixturesContainer = document.querySelector('.gms-wrapper');
-            
-            buttons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all buttons
-                    buttons.forEach(btn => btn.classList.remove('active'));
-                    
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    
-                    // Get filter type
-                    const filterType = this.getAttribute('data-filter');
-                    
-                    // Update the data attributes based on filter
-                    updateFixturesFilter(filterType);
-                }
-            
-            function refreshGMSFeed() {
-                // Clear the current content
-                fixturesContainer.innerHTML = '';
-                
-                // Re-initialize the GMS feed with new parameters
-                if (typeof window.GMS !== 'undefined' && window.GMS.init) {
-                    // If GMS has an init function, call it
-                    window.GMS.init();
-                } else if (typeof window.gmsInit === 'function') {
-                    // Alternative init function name
-                    window.gmsInit();
-                } else {
-                    // Fallback: trigger a page reload of just the GMS content
-                    // This creates a new script element to re-trigger the API call
-                    const script = document.createElement('script');
-                    script.src = 'https://gmsfeed.co.uk/js/api.js?t=' + Date.now();
-                    document.body.appendChild(script);
-                }
-            });
-            });
-            
-            function updateFixturesFilter(filterType) {
-                const originalOptions = 'showGender:yes';
-                
-                switch(filterType) {
-                    case 'default':
-                        // Reset to original options
-                        fixturesContainer.setAttribute('data-options', originalOptions);
-                        break;
-                    case 'home':
-                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:home');
-                        break;
-                    case 'away':
-                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:away');
-                        break;
-                    case 'opens':
-                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:male');
-                        break;
-                    case 'womens':
-                        fixturesContainer.setAttribute('data-options', originalOptions + ',filter:female');
-                        break;
-                    case 'pitch1':
-                        // Keeping pitch filtering as before since no specific data-options provided
-                        fixturesContainer.setAttribute('data-options', originalOptions + ',pitch:1');
-                        break;
-                    case 'pitch2':
-                        // Keeping pitch filtering as before since no specific data-options provided
-                        fixturesContainer.setAttribute('data-options', originalOptions + ',pitch:2');
-                        break;
-                }
-                
-                // Refresh the GMS API call
-                refreshGMSFeed();
-                console.log('Filter applied:', filterType);
+        function loadDefault() {
+            const wrapper = document.querySelector('.gms-wrapper');
+            wrapper.innerHTML = '';
+            wrapper.setAttribute('data-method', 'api');
+            wrapper.setAttribute('data-show', 'results');
+            wrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
+            wrapper.setAttribute('data-whatson', '7');
+            wrapper.setAttribute('data-sort_by', 'fixtureTime');
+            wrapper.setAttribute('data-options', 'showGender:yes');
+            wrapper.removeAttribute('data-filter');
+            // Reinitialize the API call
+            if (window.gmsapi) {
+                window.gmsapi.refresh();
             }
-        });
+        }
+        
+        function loadHome() {
+            const wrapper = document.querySelector('.gms-wrapper');
+            wrapper.innerHTML = '';
+            wrapper.setAttribute('data-method', 'api');
+            wrapper.setAttribute('data-show', 'results');
+            wrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
+            wrapper.setAttribute('data-whatson', '7');
+            wrapper.setAttribute('data-sort_by', 'fixtureTime');
+            wrapper.setAttribute('data-options', 'showGender:yes,filter:home');
+            // Reinitialize the API call
+            if (window.gmsapi) {
+                window.gmsapi.refresh();
+            }
+        }
     </script>
 </body>
 </html>

@@ -16,6 +16,7 @@
         <button>Womens</button>
         <button>Pitch 1</button>
         <button>Pitch 2</button>
+        <button onclick="refreshPage()">Refresh</button>
     </div>
     
     <div id="api-container">
@@ -54,6 +55,10 @@
                      data-sort_by="fixtureTime" 
                      data-options="showGender:yes,filter:home">
                 </div>`;
+        }
+        
+        function refreshPage() {
+            location.reload();
         }
     </script>
 </body>

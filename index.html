@@ -3,36 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMS Sports Dashboard</title>
+    <title>Chelmsford Hockey Club - Live Feed</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="live-feed.css">
 </head>
 <body class="landing-page">
     <div class="landing-container">
-        <div class="logo">GMS</div>
+        <div class="logo">CHC</div>
         
-        <h1>Sports Dashboard</h1>
-        <p class="subtitle">Navigate to view fixtures and results</p>
+        <h1>Chelmsford Hockey Club</h1>
+        <p class="subtitle">Live GMS feed for fixtures and results</p>
+        
+        <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span class="live-text">LIVE FEED</span>
+        </div>
         
         <div class="nav-buttons">
             <a href="Fixtures.html" class="nav-button">
                 <span class="button-icon">📅</span>
-                <span class="button-text">
-                    Fixtures
-                    <span class="button-description">View upcoming matches and games</span>
-                </span>
+                <div class="button-content">
+                    <span class="button-text">Fixtures</span>
+                    <span class="button-description">View upcoming matches and fixture schedules</span>
+                </div>
             </a>
             
             <a href="Results.html" class="nav-button">
                 <span class="button-icon">🏆</span>
-                <span class="button-text">
-                    Results
-                    <span class="button-description">Check completed matches and scores</span>
-                </span>
+                <div class="button-content">
+                    <span class="button-text">Results</span>
+                    <span class="button-description">Latest match results and scores</span>
+                </div>
             </a>
         </div>
         
         <div class="footer">
-            <p>GMS Sports Management System</p>
+            <p>Powered by GMS Sports Management System</p>
+            <p class="update-info">Data updates automatically every 5 minutes</p>
         </div>
     </div>
 </body>

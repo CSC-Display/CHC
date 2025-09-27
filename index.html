@@ -122,7 +122,7 @@
             <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:away"}'>Away</button>
             <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:male"}'>Opens</button>
             <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:female"}'>Womens</button>
-            <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:home","customFilter":"pitch1"}'>Pitch 1</button>
+            <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:home","customFilter":"Pitch 1"}'>Pitch 1</button>
             <button class="api-button" data-config='{"whatson":"6"}'>Pitch 2</button>
         </div>
 
@@ -186,14 +186,14 @@
                                 const sixthColumn = cells[5]; // 6th column (0-indexed)
                                 const cellText = sixthColumn.textContent.toLowerCase();
                                 
-                                if (filterType === 'pitch1') {
+                                if (filterType === 'Pitch 1') {
                                     // Show only rows containing "pitch 1" in 6th column
                                     if (cellText.includes('pitch 1')) {
                                         row.style.display = '';
                                     } else {
                                         row.style.display = 'none';
                                     }
-                                } else if (filterType === 'pitch2') {
+                                } else if (filterType === 'Pitch 2') {
                                     // Show only rows containing "pitch 2" in 6th column
                                     if (cellText.includes('pitch 2')) {
                                         row.style.display = '';

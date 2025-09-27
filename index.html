@@ -18,48 +18,42 @@
         <button>Pitch 2</button>
     </div>
     
-    <div class="gms-wrapper gms-ajax" 
-         data-method="api" 
-         data-show="results" 
-         data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
-         data-whatson="7" 
-         data-sort_by="fixtureTime" 
-         data-options="showGender:yes">
+    <div id="api-container">
+        <div class="gms-wrapper gms-ajax" 
+             data-method="api" 
+             data-show="results" 
+             data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
+             data-whatson="7" 
+             data-sort_by="fixtureTime" 
+             data-options="showGender:yes">
+        </div>
     </div>
     
     <script src="https://gmsfeed.co.uk/js/api.js"></script>
     
     <script>
         function loadDefault() {
-            const container = document.querySelector('.gms-wrapper').parentNode;
-            const oldWrapper = document.querySelector('.gms-wrapper');
-            const newWrapper = document.createElement('div');
-            
-            newWrapper.className = 'gms-wrapper gms-ajax';
-            newWrapper.setAttribute('data-method', 'api');
-            newWrapper.setAttribute('data-show', 'results');
-            newWrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
-            newWrapper.setAttribute('data-whatson', '7');
-            newWrapper.setAttribute('data-sort_by', 'fixtureTime');
-            newWrapper.setAttribute('data-options', 'showGender:yes');
-            
-            container.replaceChild(newWrapper, oldWrapper);
+            document.getElementById('api-container').innerHTML = `
+                <div class="gms-wrapper gms-ajax" 
+                     data-method="api" 
+                     data-show="results" 
+                     data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
+                     data-whatson="7" 
+                     data-sort_by="fixtureTime" 
+                     data-options="showGender:yes">
+                </div>`;
         }
         
         function loadHome() {
-            const container = document.querySelector('.gms-wrapper').parentNode;
-            const oldWrapper = document.querySelector('.gms-wrapper');
-            const newWrapper = document.createElement('div');
-            
-            newWrapper.className = 'gms-wrapper gms-ajax';
-            newWrapper.setAttribute('data-method', 'api');
-            newWrapper.setAttribute('data-show', 'results');
-            newWrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
-            newWrapper.setAttribute('data-whatson', '7');
-            newWrapper.setAttribute('data-sort_by', 'fixtureTime');
-            newWrapper.setAttribute('data-options', 'showGender:yes,filter:home');
-            
-            container.replaceChild(newWrapper, oldWrapper);
+            document.getElementById('api-container').innerHTML = `
+                <div class="gms-wrapper gms-ajax" 
+                     data-method="api" 
+                     data-show="results" 
+                     data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
+                     data-whatson="7" 
+                     data-sort_by="fixtureTime" 
+                     data-options="showGender:yes,filter:home">
+                </div>`;
         }
     </script>
 </body>

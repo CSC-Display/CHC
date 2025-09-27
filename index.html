@@ -3,38 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club Fixtures & Events</title>
+    <title>GMS API Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .api-button {
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border: 1px solid #d4d4d4;
+            border-radius: 8px;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .api-button:hover {
+            background: linear-gradient(145deg, #e6e6e6, #ffffff);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .api-button.active {
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .content-area {
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .gms-wrapper {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .button-container {
+                justify-content: center;
+            }
+            
+            .api-button {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Club Fixtures & Events</h1>
-    
-    <div>
-        <button onclick="loadDefault()">Default</button>
-        <button onclick="loadHome()">Home</button>
-        <button>Away</button>
-        <button>Opens</button>
-        <button>Womens</button>
-        <button>Pitch 1</button>
-        <button>Pitch 2</button>
-        <button onclick="refreshPage()">Refresh</button>
-    </div>
-    
-    <div id="api-container">
-        <div class="gms-wrapper gms-ajax" 
-             data-method="api" 
-             data-show="results" 
-             data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
-             data-whatson="7" 
-             data-sort_by="fixtureTime" 
-             data-options="showGender:yes">
+    <div class="container">
+        <div class="header">
+            <h1>GMS Sports Dashboard</h1>
+            <p>Click any button to load fixture data</p>
         </div>
-    </div>
-    
-    <script src="https://gmsfeed.co.uk/js/api.js"></script>
-    
-    <script>
-        function loadDefault() {
-            document.getElementById('api-container').innerHTML = `
+        
+        <div class="button-container">
+            <button class="api-button active" data-config='{"whatson":"7"}'>Default</button>
+            <button class="api-button" data-config='{"whatson":"1"}'>Home</button>
+            <button class="api-button" data-config='{"whatson":"2"}'>Away</button>
+            <button class="api-button" data-config='{"whatson":"3"}'>Opens</button>
+            <button class="api-button" data-config='{"whatson":"4"}'>Womens</button>
+            <button class="api-button" data-config='{"whatson":"5"}'>Pitch 1</button>
+            <button class="api-button" data-config='{"whatson":"6"}'>Pitch 2</button>
+        </div>
+
+        <div class="content-area">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading fixture data...</p>
+            </div>
+            
+            <div id="gms-content">
+                <!-- Default API content will load here -->
                 <div class="gms-wrapper gms-ajax" 
                      data-method="api" 
                      data-show="results" 
@@ -42,24 +141,98 @@
                      data-whatson="7" 
                      data-sort_by="fixtureTime" 
                      data-options="showGender:yes">
-                </div>`;
-        }
-        
-        function loadHome() {
-            document.getElementById('api-container').innerHTML = `
-                <div class="gms-wrapper gms-ajax" 
-                     data-method="api" 
-                     data-show="results" 
-                     data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
-                     data-whatson="7" 
-                     data-sort_by="fixtureTime" 
-                     data-options="showGender:yes,showdetail:yes,filter:home">
-                </div>`;
-        }
-        
-        function refreshPage() {
-            location.reload();
-        }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://gmsfeed.co.uk/js/api.js"></script>
+    <script>
+        // Wait for the page to load
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.api-button');
+            const contentArea = document.getElementById('gms-content');
+            const loading = document.querySelector('.loading');
+
+            // Function to show loading state
+            function showLoading() {
+                loading.classList.add('show');
+                contentArea.style.display = 'none';
+            }
+
+            // Function to hide loading state
+            function hideLoading() {
+                loading.classList.remove('show');
+                contentArea.style.display = 'block';
+            }
+
+            // Function to update active button
+            function updateActiveButton(clickedButton) {
+                buttons.forEach(btn => btn.classList.remove('active'));
+                clickedButton.classList.add('active');
+            }
+
+            // Function to load API content
+            function loadAPIContent(config) {
+                showLoading();
+                
+                // Clear existing content
+                contentArea.innerHTML = '';
+                
+                // Create new GMS wrapper with updated configuration
+                const gmsWrapper = document.createElement('div');
+                gmsWrapper.className = 'gms-wrapper gms-ajax';
+                gmsWrapper.setAttribute('data-method', 'api');
+                gmsWrapper.setAttribute('data-show', 'results');
+                gmsWrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
+                gmsWrapper.setAttribute('data-sort_by', 'fixtureTime');
+                gmsWrapper.setAttribute('data-options', 'showGender:yes');
+                
+                // Apply configuration
+                Object.keys(config).forEach(key => {
+                    gmsWrapper.setAttribute('data-' + key, config[key]);
+                });
+                
+                contentArea.appendChild(gmsWrapper);
+                
+                // Reinitialize GMS API if available
+                if (window.GMS && window.GMS.init) {
+                    window.GMS.init();
+                } else {
+                    // Fallback: reload the script to trigger initialization
+                    const script = document.createElement('script');
+                    script.src = 'https://gmsfeed.co.uk/js/api.js';
+                    script.onload = function() {
+                        hideLoading();
+                    };
+                    script.onerror = function() {
+                        hideLoading();
+                        contentArea.innerHTML = '<p style="color: red; text-align: center;">Failed to load API data. Please try again.</p>';
+                    };
+                    document.head.appendChild(script);
+                    return;
+                }
+                
+                // Hide loading after a short delay to allow API to initialize
+                setTimeout(() => {
+                    hideLoading();
+                }, 1000);
+            }
+
+            // Add click event listeners to buttons
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const config = JSON.parse(this.getAttribute('data-config'));
+                    updateActiveButton(this);
+                    loadAPIContent(config);
+                });
+            });
+
+            // Hide loading on initial load
+            setTimeout(() => {
+                hideLoading();
+            }, 2000);
+        });
     </script>
 </body>
 </html>

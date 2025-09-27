@@ -10,7 +10,7 @@
     <div class="container">
         <div class="header">
             <h1>GMS Sports Dashboard</h1>
-            <p>Click any button to load fixture data</p>
+            <p>Click any button to load results data</p>
             <a href="index.html">Home</a>
         </div>
         
@@ -20,12 +20,13 @@
             <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:away"}'>Away</button>
             <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:male"}'>Opens</button>
             <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:female"}'>Womens</button>
+            <button class="export-button" id="exportCsv">Export to CSV</button>
         </div>
 
         <div class="content-area">
             <div class="loading">
                 <div class="spinner"></div>
-                <p>Loading fixture data...</p>
+                <p>Loading results data...</p>
             </div>
             
             <div id="gms-content">
@@ -155,6 +156,61 @@
                 }, 1000);
             }
 
+            // Function to export table to CSV
+            function exportTableToCSV() {
+                const tables = document.querySelectorAll('.gms-table, table');
+                
+                if (tables.length === 0) {
+                    alert('No table data found to export.');
+                    return;
+                }
+                
+                // Use the first visible table
+                let targetTable = null;
+                for (let table of tables) {
+                    if (table.offsetParent !== null) { // Check if table is visible
+                        targetTable = table;
+                        break;
+                    }
+                }
+                
+                if (!targetTable) {
+                    alert('No visible table found to export.');
+                    return;
+                }
+                
+                let csvContent = '';
+                const rows = targetTable.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('th, td');
+                    const rowData = [];
+                    
+                    cells.forEach(cell => {
+                        // Clean up cell content and escape quotes
+                        let cellText = cell.textContent.trim().replace(/"/g, '""');
+                        // Wrap in quotes if contains comma, newline, or quote
+                        if (cellText.includes(',') || cellText.includes('\n') || cellText.includes('"')) {
+                            cellText = `"${cellText}"`;
+                        }
+                        rowData.push(cellText);
+                    });
+                    
+                    csvContent += rowData.join(',') + '\n';
+                });
+                
+                // Create and download the CSV file
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'gms_data.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
             // Add click event listeners to buttons
             buttons.forEach(button => {
                 button.addEventListener('click', function() {
@@ -163,6 +219,9 @@
                     loadAPIContent(config);
                 });
             });
+
+            // Add export button event listener
+            document.getElementById('exportCsv').addEventListener('click', exportTableToCSV);
 
             // Hide loading on initial load
             setTimeout(() => {

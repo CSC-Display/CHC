@@ -179,6 +179,11 @@
                     return;
                 }
                 
+                // Get active button name for filename
+                const activeButton = document.querySelector('.api-button.active');
+                const buttonName = activeButton ? activeButton.textContent.toLowerCase().replace(/\s+/g, '_') : 'data';
+                const filename = `gms_results_${buttonName}.csv`;
+                
                 let csvContent = '';
                 const rows = targetTable.querySelectorAll('tr');
                 
@@ -204,7 +209,7 @@
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
-                link.setAttribute('download', 'gms_data.csv');
+                link.setAttribute('download', filename);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();

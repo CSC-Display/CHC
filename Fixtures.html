@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMS API Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>GMS Sports Dashboard</h1>
+            <p>Click any button to load fixture data</p>
+        </div>
+        
+        <div class="button-container">
+            <button class="api-button active" data-config='{"whatson":"7"}'>Default</button>
+            <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:home"}'>Home</button>
+            <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:away"}'>Away</button>
+            <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:male"}'>Opens</button>
+            <button class="api-button" data-config='{"whatson":"7","options":"showGender:yes,filter:female"}'>Womens</button>
+        </div>
+
+        <div class="content-area">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading fixture data...</p>
+            </div>
+            
+            <div id="gms-content">
+                <!-- Default API content will load here -->
+                <div class="gms-wrapper gms-ajax" 
+                     data-method="api" 
+                     data-show="results" 
+                     data-club_id="e9ba26d3-7e18-4772-abb0-584e887c9d38" 
+                     data-whatson="7" 
+                     data-sort_by="fixtureTime" 
+                     data-options="showGender:yes">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://gmsfeed.co.uk/js/api.js"></script>
+    <script>
+        // Wait for the page to load
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.api-button');
+            const contentArea = document.getElementById('gms-content');
+            const loading = document.querySelector('.loading');
+
+            // Function to show loading state
+            function showLoading() {
+                loading.classList.add('show');
+                contentArea.style.display = 'none';
+            }
+
+            // Function to hide loading state
+            function hideLoading() {
+                loading.classList.remove('show');
+                contentArea.style.display = 'block';
+            }
+
+            // Function to update active button
+            function updateActiveButton(clickedButton) {
+                buttons.forEach(btn => btn.classList.remove('active'));
+                clickedButton.classList.add('active');
+            }
+
+            // Function to apply custom table filtering
+            function applyCustomFilter(filterType) {
+                setTimeout(() => {
+                    const tables = document.querySelectorAll('.gms-table');
+                    
+                    tables.forEach(table => {
+                        const rows = table.querySelectorAll('tbody tr');
+                        
+                        rows.forEach(row => {
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length >= 6) { // Make sure we have at least 6 columns
+                                const sixthColumn = cells[5]; // 6th column (0-indexed)
+                                const cellText = sixthColumn.textContent.trim();
+                                
+                                if (filterType === 'pitch1') {
+                                    // Show only rows containing exact venue text
+                                    if (cellText === 'Chelmsford HC - Chelmer Park - Pitch 1') {
+                                        row.style.display = '';
+                                    } else {
+                                        row.style.display = 'none';
+                                    }
+                                } else if (filterType === 'pitch2') {
+                                    // Show only rows containing "pitch 2" in 6th column
+                                    if (cellText.includes('pitch 2')) {
+                                        row.style.display = '';
+                                    } else {
+                                        row.style.display = 'none';
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }, 1500); // Wait for API data to load
+            }
+
+            // Function to load API content
+            function loadAPIContent(config) {
+                showLoading();
+                
+                // Clear existing content
+                contentArea.innerHTML = '';
+                
+                // Create new GMS wrapper with updated configuration
+                const gmsWrapper = document.createElement('div');
+                gmsWrapper.className = 'gms-wrapper gms-ajax';
+                gmsWrapper.setAttribute('data-method', 'api');
+                gmsWrapper.setAttribute('data-show', 'Fixture');
+                gmsWrapper.setAttribute('data-club_id', 'e9ba26d3-7e18-4772-abb0-584e887c9d38');
+                gmsWrapper.setAttribute('data-sort_by', 'fixtureTime');
+                gmsWrapper.setAttribute('data-options', 'showGender:yes');
+                
+                // Apply configuration
+                Object.keys(config).forEach(key => {
+                    gmsWrapper.setAttribute('data-' + key, config[key]);
+                });
+                
+                contentArea.appendChild(gmsWrapper);
+                
+                // Reinitialize GMS API if available
+                if (window.GMS && window.GMS.init) {
+                    window.GMS.init();
+                } else {
+                    // Fallback: reload the script to trigger initialization
+                    const script = document.createElement('script');
+                    script.src = 'https://gmsfeed.co.uk/js/api.js';
+                    script.onload = function() {
+                        hideLoading();
+                    };
+                    script.onerror = function() {
+                        hideLoading();
+                        contentArea.innerHTML = '<p style="color: red; text-align: center;">Failed to load API data. Please try again.</p>';
+                    };
+                    document.head.appendChild(script);
+                    return;
+                }
+                
+                // Hide loading after a short delay to allow API to initialize
+                setTimeout(() => {
+                    hideLoading();
+                    
+                    // Apply custom filtering if specified
+                    if (config.customFilter) {
+                        applyCustomFilter(config.customFilter);
+                    }
+                }, 1000);
+            }
+
+            // Add click event listeners to buttons
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const config = JSON.parse(this.getAttribute('data-config'));
+                    updateActiveButton(this);
+                    loadAPIContent(config);
+                });
+            });
+
+            // Hide loading on initial load
+            setTimeout(() => {
+                hideLoading();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
